@@ -1,0 +1,4 @@
+data/calculated-metrics/*
+data/output/*
+data/processed-data/*-
+node_modules/
