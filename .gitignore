@@ -1,4 +1,5 @@
-data/calculated-metrics/*
-data/output/*
-data/processed-data/*-
+data/*
+!data/output/.keep
+!data/calculated-metrics/.keep
+!data/README.md
 node_modules/
