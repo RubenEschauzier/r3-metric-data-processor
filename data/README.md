@@ -1,7 +1,11 @@
 Data is expected to be in the same format as output by the JBR (INSERT LINK HERE) experiment used to produce the results. This is as follows:
-|
-|-> combination_0
-    |-> Query type name
-        |-> query_n
-            
-|...
+
+- `output`
+  - `combination_0`
+    - `interactive-discover-1`
+      - `query_0`
+      - ...
+      - `query_n`
+    ...
+    - `interactive-short-6`
+  - ...
