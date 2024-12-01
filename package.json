@@ -1,0 +1,17 @@
+{
+  "name": "r3-metric-data-processor",
+  "version": "1.0.0",
+  "description": "Code to ingest Comunica query run data and compute the R3 metric.",
+  "main": "bin/index.js",
+  "license": "MIT",
+  "scripts": {
+    "build-watch:ts": "tsc --watch"
+  },
+  "dependencies": {
+    "comunica-experiment-performance-metric": "file:./../r3-metric-library",
+    "typescript": "^5.7.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.1"
+  }
+}
