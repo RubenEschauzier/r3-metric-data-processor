@@ -36,11 +36,17 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const path = __importStar(require("path"));
 const DataIngestor_1 = require("../src/DataIngestor");
 const R3Metric_1 = require("../src/R3Metric");
+const DiefficiencyMetric_1 = require("../src/DiefficiencyMetric");
 const ingestor = new DataIngestor_1.DataIngestor(path.join(__dirname, "..", "data", "output"));
 const processedData = ingestor.read();
 const metricOutputDir = path.join(__dirname, "..", "data", "calculated-metrics");
-const metric = new R3Metric_1.R3Metric(processedData);
-metric.run().then(x => {
-    R3Metric_1.R3Metric.writeToFile(x, metricOutputDir);
+const r3Metric = new R3Metric_1.R3Metric(processedData);
+const diMetric = new DiefficiencyMetric_1.DiefficiencyMetricExperiment(processedData);
+diMetric.run().then(x => {
+    console.log(x);
+    // R3Metric.writeToFile(x, metricOutputDir);
 });
+// metric.run().then(x => {
+//     R3Metric.writeToFile(x, metricOutputDir);
+// });
 //# sourceMappingURL=process.js.map

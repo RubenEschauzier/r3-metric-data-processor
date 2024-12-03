@@ -26,33 +26,45 @@ export class DataIngestor{
         return query.includes('DISTINCT');
     }
 
-    public constructRelevantDocuments(queryPath: string, query: string){
-        const queryRelevantAllInstantiations: string[][][] = [];
+    public getResultsData(queryPath: string, query: string){
+        const resultsAllInstantiations: Record<any,any>[][] = [];
         const files = fs.readdirSync(queryPath)
             .filter(file => this.intermediateResultFilePattern.test(file));
         const filterDuplicates = this.isDistinctQuery(query);
         for (const file of files){
             const results: Set<string> = new Set();
-            const queryRelevant: string[][] = [];
+            const resultsQuery: Record<any, any>[] = [];
 
             const data = fs.readFileSync(path.join(queryPath, file), 'utf-8').trim();
             const lines = data.split('\n')
             if (data.length > 0){
                 for (const line of lines){
                     const resultData = JSON.parse(line);
-                    if (resultData.operation == 'project'){
+                    if (resultData.operation === 'project'){
                         if (!filterDuplicates || !results.has(resultData.data)){
                             results.add(resultData.data);
-                            const prov: string[] = JSON.parse(resultData.provenance);
-                            queryRelevant.push(prov);
+                            resultsQuery.push(resultData);
                         }
                     }
                 }    
             }
-            queryRelevantAllInstantiations.push(queryRelevant);
+            resultsAllInstantiations.push(resultsQuery);
         }
-        return queryRelevantAllInstantiations;
+        return resultsAllInstantiations;
     }
+
+    public constructRelevantDocuments(resultsAllInstantiations: Record<any,any>[][]){
+        const relevantDocuments: string[][][] = []
+        for (let i = 0; i < resultsAllInstantiations.length; i++){
+            const queryRelevant: string[][] = [];
+            for (let j = 0; j < resultsAllInstantiations[i].length; j++){
+                queryRelevant.push(JSON.parse(resultsAllInstantiations[i][j].provenance))
+            }
+            relevantDocuments.push(queryRelevant);
+        }
+        return relevantDocuments;
+    }
+
     /**
      * Get topologies in format expected by R3 metric, so as edgelist, 
      * traversal path, and seed documents.
@@ -136,6 +148,7 @@ export class DataIngestor{
                 'utf-8'
             )
         );
+        const templateToResults: Record<string , Record<any,any>[][][]> = {};
         const templateToRelevantDocuments: Record<string, string[][][][]> = {}; 
         const templateToTopologies: Record<string, ITopologyOutput[][]> = {}
         Object.entries(base64ToDirectory).forEach(([base64Query, pathToQuery]) => {
@@ -143,16 +156,20 @@ export class DataIngestor{
             const template = pathToQuery.split("/")[0];
             templateToRelevantDocuments[template] ??= [];
             templateToTopologies[template] ??= [];
-            const relevantDocuments: string[][][] = this.constructRelevantDocuments(
+            templateToResults[template] ??= [];
+
+            const results = this.getResultsData(
                 path.join(experimentLocation, pathToQuery), query
             );
+            const relevantDocuments = this.constructRelevantDocuments(results)
             const topologiesQueryInstantiation = this.getTopologies(
                 path.join(experimentLocation, pathToQuery), query
             );
             templateToRelevantDocuments[template].push(relevantDocuments);
-            templateToTopologies[template].push(topologiesQueryInstantiation)
+            templateToTopologies[template].push(topologiesQueryInstantiation);
+            templateToResults[template].push(results)
         });
-        return { templateToRelevantDocuments, templateToTopologies }
+        return { templateToRelevantDocuments, templateToTopologies, templateToResults }
     }
 }
 
@@ -167,4 +184,5 @@ export interface ITopologyOutput{
 export interface IExperimentReadOutput{
     templateToRelevantDocuments: Record<string, string[][][][]>;
     templateToTopologies: Record<string, ITopologyOutput[][]>;
+    templateToResults: Record<string , Record<any,any>[][][]>
 }

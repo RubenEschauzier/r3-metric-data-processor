@@ -56,31 +56,41 @@ class DataIngestor {
     isDistinctQuery(query) {
         return query.includes('DISTINCT');
     }
-    constructRelevantDocuments(queryPath, query) {
-        const queryRelevantAllInstantiations = [];
+    getResultsData(queryPath, query) {
+        const resultsAllInstantiations = [];
         const files = fs.readdirSync(queryPath)
             .filter(file => this.intermediateResultFilePattern.test(file));
         const filterDuplicates = this.isDistinctQuery(query);
         for (const file of files) {
             const results = new Set();
-            const queryRelevant = [];
+            const resultsQuery = [];
             const data = fs.readFileSync(path.join(queryPath, file), 'utf-8').trim();
             const lines = data.split('\n');
             if (data.length > 0) {
                 for (const line of lines) {
                     const resultData = JSON.parse(line);
-                    if (resultData.operation == 'project') {
+                    if (resultData.operation === 'project') {
                         if (!filterDuplicates || !results.has(resultData.data)) {
                             results.add(resultData.data);
-                            const prov = JSON.parse(resultData.provenance);
-                            queryRelevant.push(prov);
+                            resultsQuery.push(resultData);
                         }
                     }
                 }
             }
-            queryRelevantAllInstantiations.push(queryRelevant);
+            resultsAllInstantiations.push(resultsQuery);
         }
-        return queryRelevantAllInstantiations;
+        return resultsAllInstantiations;
+    }
+    constructRelevantDocuments(resultsAllInstantiations) {
+        const relevantDocuments = [];
+        for (let i = 0; i < resultsAllInstantiations.length; i++) {
+            const queryRelevant = [];
+            for (let j = 0; j < resultsAllInstantiations[i].length; j++) {
+                queryRelevant.push(JSON.parse(resultsAllInstantiations[i][j].provenance));
+            }
+            relevantDocuments.push(queryRelevant);
+        }
+        return relevantDocuments;
     }
     /**
      * Get topologies in format expected by R3 metric, so as edgelist,
@@ -152,6 +162,7 @@ class DataIngestor {
     }
     readFullExperiment(experimentLocation) {
         const base64ToDirectory = JSON.parse(fs.readFileSync(path.join(experimentLocation, 'base64ToDirectory.json'), 'utf-8'));
+        const templateToResults = {};
         const templateToRelevantDocuments = {};
         const templateToTopologies = {};
         Object.entries(base64ToDirectory).forEach(([base64Query, pathToQuery]) => {
@@ -159,12 +170,15 @@ class DataIngestor {
             const template = pathToQuery.split("/")[0];
             templateToRelevantDocuments[template] ?? (templateToRelevantDocuments[template] = []);
             templateToTopologies[template] ?? (templateToTopologies[template] = []);
-            const relevantDocuments = this.constructRelevantDocuments(path.join(experimentLocation, pathToQuery), query);
+            templateToResults[template] ?? (templateToResults[template] = []);
+            const results = this.getResultsData(path.join(experimentLocation, pathToQuery), query);
+            const relevantDocuments = this.constructRelevantDocuments(results);
             const topologiesQueryInstantiation = this.getTopologies(path.join(experimentLocation, pathToQuery), query);
             templateToRelevantDocuments[template].push(relevantDocuments);
             templateToTopologies[template].push(topologiesQueryInstantiation);
+            templateToResults[template].push(results);
         });
-        return { templateToRelevantDocuments, templateToTopologies };
+        return { templateToRelevantDocuments, templateToTopologies, templateToResults };
     }
 }
 exports.DataIngestor = DataIngestor;

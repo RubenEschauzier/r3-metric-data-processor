@@ -33,36 +33,33 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.R3Metric = void 0;
-const r3 = __importStar(require("comunica-experiment-performance-metric"));
-const fs = __importStar(require("fs"));
-const path = __importStar(require("path"));
-class R3Metric {
+exports.DiefficiencyMetricExperiment = void 0;
+const di = __importStar(require("diefficiency"));
+class DiefficiencyMetricExperiment {
     constructor(data) {
         this.benchmarkData = data;
-        this.metricCalculator = new r3.RunLinkTraversalPerformanceMetrics();
     }
     async run() {
         const experimentOutputs = {};
         for (const experiment of Object.keys(this.benchmarkData)) {
             console.log(`Calculating for ${experiment}`);
-            const templateMetrics = await this.calculateMetricExperiment(this.benchmarkData[experiment]);
+            const templateMetrics = await this.calculateDiEfficiencyExperiment(this.benchmarkData[experiment]);
             experimentOutputs[experiment] = templateMetrics;
         }
         return experimentOutputs;
     }
-    async calculateMetricExperiment(experimentData) {
+    async calculateDiEfficiencyExperiment(experimentData) {
         const relevantDocuments = experimentData.templateToRelevantDocuments;
         const topologies = experimentData.templateToTopologies;
-        const templateToR3 = {};
+        const templateToDiefficiency = {};
         for (const template of Object.keys(relevantDocuments)) {
             console.log(template);
-            const templateMetrics = await this.calculateMetricTemplate(topologies[template], relevantDocuments[template]);
-            templateToR3[template] = templateMetrics;
+            const templateMetrics = await this.calculateDiEfficiencyTemplate(topologies[template], relevantDocuments[template]);
+            templateToDiefficiency[template] = templateMetrics;
         }
-        return templateToR3;
+        return templateToDiefficiency;
     }
-    async calculateMetricTemplate(topologies, relevantDocuments) {
+    async calculateDiEfficiencyTemplate(topologies, relevantDocuments) {
         const templateMetrics = [];
         for (let i = 0; i < relevantDocuments.length; i++) {
             const queryMetrics = [];
@@ -73,7 +70,6 @@ class R3Metric {
                     console.log(relevantDocuments.length);
                     console.log(relevantDocuments[i].length);
                 }
-                const numNodes = Object.keys(topologies[i][j].indexToNode).length;
                 const relevanDocumentsAsIndex = relevantDocuments[i][j].map(x => {
                     return x.map(y => {
                         const indexedNode = topologies[i][j].nodeToIndex[y];
@@ -84,26 +80,64 @@ class R3Metric {
                         return indexedNode;
                     });
                 });
-                // In case there are no relevant documents, the query timed out so R3 can't be computed
+                // In case there are no relevant documents, the query timed out so diefficiency cant be computed
                 if (relevanDocumentsAsIndex.length === 0) {
                     queryMetrics.push(-1);
                 }
                 else {
-                    const output = await this.metricCalculator.runMetricAll(topologies[i][j].edgeList, relevanDocumentsAsIndex, topologies[i][j].dereferenceOrder, topologies[i][j].seedDocuments, numNodes);
-                    queryMetrics.push(output);
+                    const timestamps = this.getRetrievalTimestamps(topologies[i][j], relevanDocumentsAsIndex, 'event');
+                    queryMetrics.push(this.calculateDiEfficiency(timestamps, relevanDocumentsAsIndex.length));
                 }
             }
             templateMetrics.push(queryMetrics);
         }
         return templateMetrics;
     }
-    calculateWeightedR3MetricExperiment() {
+    calculateDiEfficiency(timestamps, nResults) {
+        const output = di.DiEfficiencyMetric.answerDistributionFunction(timestamps, 1000);
+        const dieff = di.DiEfficiencyMetric.defAtK(nResults, output.answerDist, output.linSpace);
+        return dieff;
     }
-    static writeToFile(data, outputLocation) {
-        for (const combination of Object.keys(data)) {
-            fs.writeFileSync(path.join(outputLocation, `${combination}.json`), JSON.stringify(data));
+    getRetrievalTimestamps(topology, relevantDocuments, tsType) {
+        const engineTraversalPath = topology.dereferenceOrder;
+        // Iterate over engine traversal path, update to visit for result, after update check if new list is empty
+        // if it is empty we have +1 result
+        const eventTimestamps = [];
+        const progressUntillResult = {};
+        for (let i = 0; i < relevantDocuments.length; i++) {
+            progressUntillResult[i] = relevantDocuments[i];
         }
+        const traversalUntillAllVisited = [];
+        for (let i = 0; i < engineTraversalPath.length; i++) {
+            const newVisitedNode = engineTraversalPath[i];
+            traversalUntillAllVisited.push(newVisitedNode);
+            // Edge denotes traversal to second element of edge, so we only check if second element
+            // Is a relevant node
+            for (let j = 0; j < relevantDocuments.length; j++) {
+                if (progressUntillResult[j].includes(newVisitedNode[1])) {
+                    const nodes = [...progressUntillResult[j]];
+                    // Remove currently found document
+                    nodes.splice(nodes.indexOf(newVisitedNode[1]), 1);
+                    progressUntillResult[j] = nodes;
+                    if (progressUntillResult[j].length === 0) {
+                        if (tsType === 'time') {
+                            // TODO get timestamp from topology dereference metadata and put it in here
+                        }
+                        if (tsType == 'event') {
+                            // At traversal step i have we found a new result
+                            eventTimestamps.push(i);
+                        }
+                    }
+                }
+            }
+        }
+        return eventTimestamps;
+    }
+    getAnswerDistribution(retrievalTimestamps) {
+        const distFunction = di.DiEfficiencyMetric.answerDistributionFunction(retrievalTimestamps, 1000);
+    }
+    getResultRetrievalDistribution() {
     }
 }
-exports.R3Metric = R3Metric;
-//# sourceMappingURL=R3Metric.js.map
+exports.DiefficiencyMetricExperiment = DiefficiencyMetricExperiment;
+//# sourceMappingURL=DiefficiencyMetric.js.map

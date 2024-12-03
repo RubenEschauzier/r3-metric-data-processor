@@ -28,6 +28,7 @@ export class R3Metric{
         const topologies = experimentData.templateToTopologies;
         const templateToR3: Record<string, number[][]> = {};
         for (const template of Object.keys(relevantDocuments)){
+            console.log(template)
             const templateMetrics = await this.calculateMetricTemplate(
                 topologies[template], relevantDocuments[template]
             );
@@ -41,12 +42,19 @@ export class R3Metric{
         for (let i = 0; i < relevantDocuments.length; i++){
             const queryMetrics: number[] = [];
             for (let j = 0; j < relevantDocuments[i].length; j++){
+                if (topologies[i][j] === undefined){
+                    console.log(topologies.length)
+                    console.log(topologies[i].length)
+                    console.log(relevantDocuments.length)
+                    console.log(relevantDocuments[i].length)
+                }
                 const numNodes = Object.keys(topologies[i][j].indexToNode).length;
                 const relevanDocumentsAsIndex = relevantDocuments[i][j].map(x => {
                     return x.map(y => {
                         const indexedNode = topologies[i][j].nodeToIndex[y]
-                        if (!indexedNode){
-                            console.log(`Node: ${y} not in node to index`);
+                        if (indexedNode === undefined){
+                            console.log(topologies[i][j].nodeToIndex)
+                            console.log(`Node: ${y} not in node to index for i,j,y${[i,j,y]}`);
                         }
                         return indexedNode
                     });

@@ -5,7 +5,8 @@ export declare class DataIngestor {
     constructor(dataLocation: string);
     read(): Record<string, IExperimentReadOutput>;
     isDistinctQuery(query: string): boolean;
-    constructRelevantDocuments(queryPath: string, query: string): string[][][];
+    getResultsData(queryPath: string, query: string): Record<any, any>[][];
+    constructRelevantDocuments(resultsAllInstantiations: Record<any, any>[][]): string[][][];
     /**
      * Get topologies in format expected by R3 metric, so as edgelist,
      * traversal path, and seed documents.
@@ -34,4 +35,5 @@ export interface ITopologyOutput {
 export interface IExperimentReadOutput {
     templateToRelevantDocuments: Record<string, string[][][][]>;
     templateToTopologies: Record<string, ITopologyOutput[][]>;
+    templateToResults: Record<string, Record<any, any>[][][]>;
 }
