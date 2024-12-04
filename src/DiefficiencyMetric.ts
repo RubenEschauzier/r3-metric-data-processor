@@ -64,6 +64,7 @@ export class DiefficiencyMetricExperiment{
                         relevanDocumentsAsIndex,
                         'event'
                     );
+                    // TODO CHECK IF THE ANSWER DISTRIBUTION IS CORRECT!!
                     queryMetrics.push(this.calculateDiEfficiency(timestamps, relevanDocumentsAsIndex.length));    
                 }
             }
