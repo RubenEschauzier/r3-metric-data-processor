@@ -18,6 +18,7 @@ const diMetric = new DiefficiencyMetricExperiment(processedData);
 // });
 
 r3Metric.run().then(x => {
+    console.log(JSON.stringify(x))
     // R3Metric.writeToFile(x, metricOutputDir);
 });
 

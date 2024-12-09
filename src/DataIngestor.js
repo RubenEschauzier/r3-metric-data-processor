@@ -185,7 +185,7 @@ class DataIngestor {
                 const edge = [Number(key), target, 1];
                 if (weightType === 'http') {
                     const requestTime = topology.nodeMetadata[target]['httpRequestTime'];
-                    if (requestTime)
+                    if (requestTime && requestTime > 0)
                         edge[2] = requestTime;
                 }
                 if (weightType === 'documentSize') {
@@ -200,8 +200,8 @@ class DataIngestor {
             const weightedEdge = [edge[0], edge[1], 1];
             if (weightType == 'http') {
                 const requestTime = topology.nodeMetadata[edge[1]]['httpRequestTime'];
-                if (requestTime)
-                    edge[2] = requestTime;
+                if (requestTime && requestTime > 0)
+                    weightedEdge[2] = requestTime;
             }
             if (weightType == 'documentSize') {
             }

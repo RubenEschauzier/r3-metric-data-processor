@@ -4,9 +4,12 @@ export declare class R3Metric {
     benchmarkData: Record<string, IExperimentReadOutput>;
     metricCalculator: r3.RunLinkTraversalPerformanceMetrics;
     constructor(data: Record<string, IExperimentReadOutput>);
-    run(): Promise<Record<string, Record<string, number[][]>>>;
-    calculateMetricExperiment(experimentData: IExperimentReadOutput): Promise<Record<string, number[][]>>;
-    calculateMetricTemplate(topologies: ITopologyOutput[][], relevantDocuments: string[][][][]): Promise<number[][]>;
-    calculateWeightedR3MetricExperiment(): void;
+    run(): Promise<Record<string, Record<string, ITemplateR3Metric>>>;
+    calculateMetricExperiment(experimentData: IExperimentReadOutput): Promise<Record<string, ITemplateR3Metric>>;
+    calculateMetricTemplate(topologies: ITopologyOutput[][], relevantDocuments: string[][][][]): Promise<ITemplateR3Metric>;
     static writeToFile(data: Record<string, Record<string, number[][]>>, outputLocation: string): void;
+}
+export interface ITemplateR3Metric {
+    unweighted: number[][];
+    http: number[][];
 }

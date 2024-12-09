@@ -13,7 +13,7 @@ export class R3Metric{
     }
 
     public async run(){
-        const experimentOutputs: Record<string, Record<string, number[][]>> = {};
+        const experimentOutputs: Record<string, Record<string, ITemplateR3Metric>> = {};
         for (const experiment of Object.keys(this.benchmarkData)){
             console.log(`Calculating for ${experiment}`);
             const templateMetrics = 
@@ -26,9 +26,8 @@ export class R3Metric{
     public async calculateMetricExperiment(experimentData: IExperimentReadOutput){
         const relevantDocuments = experimentData.templateToRelevantDocuments;
         const topologies = experimentData.templateToTopologies;
-        const templateToR3: Record<string, number[][]> = {};
+        const templateToR3: Record<string, ITemplateR3Metric> = {};
         for (const template of Object.keys(relevantDocuments)){
-            console.log(template)
             const templateMetrics = await this.calculateMetricTemplate(
                 topologies[template], relevantDocuments[template]
             );
@@ -37,11 +36,16 @@ export class R3Metric{
         return templateToR3
     }
 
-    public async calculateMetricTemplate(topologies: ITopologyOutput[][], relevantDocuments: string[][][][]){
-        const templateMetrics: number[][] = []
+    public async calculateMetricTemplate(topologies: ITopologyOutput[][], relevantDocuments: string[][][][]):
+        Promise<ITemplateR3Metric>{
+        const templateMetrics: ITemplateR3Metric = {
+            unweighted: [],
+            http: []
+        }
+
         for (let i = 0; i < relevantDocuments.length; i++){
             const queryMetricsUnweighted: number[] = [];
-            const queryMetricsWeighted: number[] = [];
+            const queryMetricsHttp: number[] = [];
             for (let j = 0; j < relevantDocuments[i].length; j++){
                 if (topologies[i][j] === undefined){
                     console.log(topologies.length)
@@ -64,24 +68,33 @@ export class R3Metric{
                 if (relevanDocumentsAsIndex.length === 0){
                     queryMetricsUnweighted.push(-1);
                 }
+                else if (topologies[i][j].edgeList.length === 1){
+                    queryMetricsUnweighted.push(1)
+                    queryMetricsHttp.push(1);
+                }
                 else{
-                    const output = await this.metricCalculator.runMetricAll(
+                    const outputUnweighted = await this.metricCalculator.runMetricAll(
                         topologies[i][j].edgeList,
                         relevanDocumentsAsIndex,
                         topologies[i][j].dereferenceOrder,
                         topologies[i][j].seedDocuments,
                         numNodes
                     );
-                    queryMetricsUnweighted.push(output);    
+                    const outputHttp = await this.metricCalculator.runMetricAll(
+                        topologies[i][j].edgeListHttp,
+                        relevanDocumentsAsIndex,
+                        topologies[i][j].dereferenceOrderHttp,
+                        topologies[i][j].seedDocuments,
+                        numNodes
+                    );
+                    queryMetricsUnweighted.push(outputUnweighted);    
+                    queryMetricsHttp.push(outputHttp);
                 }
             }
-            templateMetrics.push(queryMetricsUnweighted);
+            templateMetrics.unweighted.push(queryMetricsUnweighted);
+            templateMetrics.http.push(queryMetricsHttp);
         }
         return templateMetrics;
-    }
-
-    public calculateWeightedR3MetricExperiment(){
-
     }
 
     public static writeToFile(data: Record<string, Record<string, number[][]>>, outputLocation: string){
@@ -89,4 +102,10 @@ export class R3Metric{
             fs.writeFileSync(path.join(outputLocation, `r3-${combination}.json`), JSON.stringify(data[combination]))
         }
     }
+}
+
+export interface ITemplateR3Metric 
+{
+    unweighted: number[][];
+    http: number[][];
 }

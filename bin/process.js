@@ -49,6 +49,7 @@ const diMetric = new DiefficiencyMetric_1.DiefficiencyMetricExperiment(processed
 //     // R3Metric.writeToFile(x, metricOutputDir);
 // });
 r3Metric.run().then(x => {
+    console.log(JSON.stringify(x));
     // R3Metric.writeToFile(x, metricOutputDir);
 });
 //# sourceMappingURL=process.js.map

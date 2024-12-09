@@ -56,17 +56,19 @@ class R3Metric {
         const topologies = experimentData.templateToTopologies;
         const templateToR3 = {};
         for (const template of Object.keys(relevantDocuments)) {
-            console.log(template);
             const templateMetrics = await this.calculateMetricTemplate(topologies[template], relevantDocuments[template]);
             templateToR3[template] = templateMetrics;
         }
         return templateToR3;
     }
     async calculateMetricTemplate(topologies, relevantDocuments) {
-        const templateMetrics = [];
+        const templateMetrics = {
+            unweighted: [],
+            http: []
+        };
         for (let i = 0; i < relevantDocuments.length; i++) {
             const queryMetricsUnweighted = [];
-            const queryMetricsWeighted = [];
+            const queryMetricsHttp = [];
             for (let j = 0; j < relevantDocuments[i].length; j++) {
                 if (topologies[i][j] === undefined) {
                     console.log(topologies.length);
@@ -89,16 +91,21 @@ class R3Metric {
                 if (relevanDocumentsAsIndex.length === 0) {
                     queryMetricsUnweighted.push(-1);
                 }
+                else if (topologies[i][j].edgeList.length === 1) {
+                    queryMetricsUnweighted.push(1);
+                    queryMetricsHttp.push(1);
+                }
                 else {
-                    const output = await this.metricCalculator.runMetricAll(topologies[i][j].edgeList, relevanDocumentsAsIndex, topologies[i][j].dereferenceOrder, topologies[i][j].seedDocuments, numNodes);
-                    queryMetricsUnweighted.push(output);
+                    const outputUnweighted = await this.metricCalculator.runMetricAll(topologies[i][j].edgeList, relevanDocumentsAsIndex, topologies[i][j].dereferenceOrder, topologies[i][j].seedDocuments, numNodes);
+                    const outputHttp = await this.metricCalculator.runMetricAll(topologies[i][j].edgeListHttp, relevanDocumentsAsIndex, topologies[i][j].dereferenceOrderHttp, topologies[i][j].seedDocuments, numNodes);
+                    queryMetricsUnweighted.push(outputUnweighted);
+                    queryMetricsHttp.push(outputHttp);
                 }
             }
-            templateMetrics.push(queryMetricsUnweighted);
+            templateMetrics.unweighted.push(queryMetricsUnweighted);
+            templateMetrics.http.push(queryMetricsHttp);
         }
         return templateMetrics;
-    }
-    calculateWeightedR3MetricExperiment() {
     }
     static writeToFile(data, outputLocation) {
         for (const combination of Object.keys(data)) {
