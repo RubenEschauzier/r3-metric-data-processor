@@ -36,6 +36,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.DataIngestor = void 0;
 const fs = __importStar(require("fs"));
 const path = __importStar(require("path"));
+const papaparse_1 = require("papaparse");
 class DataIngestor {
     constructor(dataLocation) {
         // We can make this setable in future versions if this gets reused.
@@ -53,27 +54,63 @@ class DataIngestor {
         }
         return experimentOutputs;
     }
+    /**
+     * Read result time stamps and total elapsed time per query to construct diefficiency with
+     */
+    readTimestamps() {
+    }
     isDistinctQuery(query) {
         return query.includes('DISTINCT');
     }
     getResultsData(queryPath, query) {
-        const resultsAllInstantiations = [];
+        var _a;
         const files = fs.readdirSync(queryPath)
             .filter(file => this.intermediateResultFilePattern.test(file));
         const filterDuplicates = this.isDistinctQuery(query);
+        const queryToProvenanceSize = {};
+        const fileData = {};
+        for (const file of files) {
+            // Provenance is streamed, so first 'results' have incomplete provenance
+            // This filters out incomplete provenance from results
+            const resultToProvenanceSize = {};
+            const dataQuery = [];
+            const data = fs.readFileSync(path.join(queryPath, file), 'utf-8').trim();
+            if (data.length > 0) {
+                const lines = data.split('\n');
+                for (const line of lines) {
+                    const resultData = JSON.parse(line);
+                    resultToProvenanceSize[_a = resultData.data] ?? (resultToProvenanceSize[_a] = 1);
+                    if (resultData.operation === 'project') {
+                        const prov = JSON.parse(resultData.provenance);
+                        if (prov.length > resultToProvenanceSize[resultData.data]) {
+                            resultToProvenanceSize[resultData.data] = prov.length;
+                        }
+                        const processedData = {
+                            data: resultData.data,
+                            provenance: prov,
+                            operation: resultData.operation,
+                            timestamp: resultData.timestamp
+                        };
+                        dataQuery.push(processedData);
+                    }
+                }
+            }
+            fileData[file] = dataQuery;
+            queryToProvenanceSize[file] = resultToProvenanceSize;
+        }
+        const resultsAllInstantiations = [];
         for (const file of files) {
             const results = new Set();
             const resultsQuery = [];
-            const data = fs.readFileSync(path.join(queryPath, file), 'utf-8').trim();
-            const lines = data.split('\n');
-            if (data.length > 0) {
-                for (const line of lines) {
-                    const resultData = JSON.parse(line);
-                    if (resultData.operation === 'project') {
-                        if (!filterDuplicates || !results.has(resultData.data)) {
-                            results.add(resultData.data);
-                            resultsQuery.push(resultData);
-                        }
+            const data = fileData[file];
+            const provenanceLength = queryToProvenanceSize[file];
+            for (const result of data) {
+                // Filter out incomplete provenance annotations
+                if (result.provenance.length === provenanceLength[result.data]) {
+                    // Filter out duplicates if distinct is in the query
+                    if (!filterDuplicates || !results.has(result.data)) {
+                        results.add(result.data);
+                        resultsQuery.push(result);
                     }
                 }
             }
@@ -86,7 +123,7 @@ class DataIngestor {
         for (let i = 0; i < resultsAllInstantiations.length; i++) {
             const queryRelevant = [];
             for (let j = 0; j < resultsAllInstantiations[i].length; j++) {
-                queryRelevant.push(JSON.parse(resultsAllInstantiations[i][j].provenance));
+                queryRelevant.push(resultsAllInstantiations[i][j].provenance);
             }
             relevantDocuments.push(queryRelevant);
         }
@@ -99,7 +136,7 @@ class DataIngestor {
      * @param query
      * @returns
      */
-    getTopologies(queryPath, query) {
+    getTopologies(queryPath) {
         const topologies = [];
         const files = fs.readdirSync(queryPath)
             .filter(file => this.topologyFilePattern.test(file));
@@ -110,12 +147,17 @@ class DataIngestor {
             // time constraints require this 'hack'
             const seedDocuments = [0];
             const edgeList = this.constructEdgeList(topology, 'unweighted');
-            const weightedEdgesInOrder = this.constructEdgesInOrder(topology, 'unweighted');
+            const edgeListHttp = this.constructEdgeList(topology, 'http');
+            const EdgesInOrder = this.constructEdgesInOrder(topology, 'unweighted');
+            const EdgesInOrderHttp = this.constructEdgesInOrder(topology, 'http');
             const processedTopology = {
                 edgeList,
-                dereferenceOrder: weightedEdgesInOrder,
+                edgeListHttp: edgeListHttp,
+                dereferenceOrder: EdgesInOrder,
+                dereferenceOrderHttp: EdgesInOrderHttp,
                 indexToNode: topology.indexToNodeDict,
                 nodeToIndex: topology.nodeToIndexDict,
+                nodeMetadata: topology.nodeMetadata,
                 seedDocuments
             };
             topologies.push(processedTopology);
@@ -142,6 +184,9 @@ class DataIngestor {
             for (const target of value) {
                 const edge = [Number(key), target, 1];
                 if (weightType === 'http') {
+                    const requestTime = topology.nodeMetadata[target]['httpRequestTime'];
+                    if (requestTime)
+                        edge[2] = requestTime;
                 }
                 if (weightType === 'documentSize') {
                 }
@@ -154,6 +199,9 @@ class DataIngestor {
         return topology.edgesInOrder.map((edge) => {
             const weightedEdge = [edge[0], edge[1], 1];
             if (weightType == 'http') {
+                const requestTime = topology.nodeMetadata[edge[1]]['httpRequestTime'];
+                if (requestTime)
+                    edge[2] = requestTime;
             }
             if (weightType == 'documentSize') {
             }
@@ -173,12 +221,42 @@ class DataIngestor {
             templateToResults[template] ?? (templateToResults[template] = []);
             const results = this.getResultsData(path.join(experimentLocation, pathToQuery), query);
             const relevantDocuments = this.constructRelevantDocuments(results);
-            const topologiesQueryInstantiation = this.getTopologies(path.join(experimentLocation, pathToQuery), query);
+            const topologiesQueryInstantiation = this.getTopologies(path.join(experimentLocation, pathToQuery));
             templateToRelevantDocuments[template].push(relevantDocuments);
             templateToTopologies[template].push(topologiesQueryInstantiation);
             templateToResults[template].push(results);
         });
-        return { templateToRelevantDocuments, templateToTopologies, templateToResults };
+        const queryTimesRaw = fs.readFileSync(path.join(experimentLocation, 'query-times.csv'), 'utf8');
+        const parsedQueryTimes = (0, papaparse_1.parse)(queryTimesRaw, {
+            delimiter: ';', // Specify the delimiter
+            header: true, // Use the first row as the header
+        });
+        const templateToTimings = this.processExperimentQueryTimes(parsedQueryTimes);
+        return { templateToRelevantDocuments, templateToTopologies, templateToResults, templateToTimings };
+    }
+    processExperimentQueryTimes(queryTimes) {
+        var _a;
+        const templateToResultTimings = {};
+        for (const row of queryTimes.data) {
+            templateToResultTimings[_a = row.name] ?? (templateToResultTimings[_a] = {
+                timestamps: [],
+                timeElapsed: [],
+                timeOut: []
+            });
+            const timedOut = row.error === 'true';
+            templateToResultTimings[row.name].timeOut.push(timedOut);
+            if (row.time !== undefined) {
+                if (row.time === '0' && timedOut) {
+                    templateToResultTimings[row.name].timestamps.push([NaN]);
+                    templateToResultTimings[row.name].timeElapsed.push([NaN]);
+                }
+                else {
+                    templateToResultTimings[row.name].timestamps.push(row.timestamps.split(' ').map((x) => Number(x)));
+                    templateToResultTimings[row.name].timeElapsed.push(row.times.split(' ').map((x) => Number(x)));
+                }
+            }
+        }
+        return templateToResultTimings;
     }
 }
 exports.DataIngestor = DataIngestor;

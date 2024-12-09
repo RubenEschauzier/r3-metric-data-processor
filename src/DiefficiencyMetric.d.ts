@@ -1,12 +1,26 @@
-import { IExperimentReadOutput, ITopologyOutput } from "./DataIngestor";
+import { IExperimentReadOutput, IResultTimingsTemplate, ITopologyOutput } from "./DataIngestor";
 export declare class DiefficiencyMetricExperiment {
     benchmarkData: Record<string, IExperimentReadOutput>;
     constructor(data: Record<string, IExperimentReadOutput>);
-    run(): Promise<Record<string, Record<string, number[][]>>>;
-    calculateDiEfficiencyExperiment(experimentData: IExperimentReadOutput): Promise<Record<string, number[][]>>;
-    calculateDiEfficiencyTemplate(topologies: ITopologyOutput[][], relevantDocuments: string[][][][]): Promise<number[][]>;
-    calculateDiEfficiency(timestamps: number[], nResults: number): number;
-    getRetrievalTimestamps(topology: ITopologyOutput, relevantDocuments: number[][], tsType: 'event' | 'time'): number[];
-    getAnswerDistribution(retrievalTimestamps: number[]): void;
-    getResultRetrievalDistribution(): void;
+    run(): Promise<Record<string, Record<string, ITemplateDieff>>>;
+    calculateDiEfficiencyExperiment(experimentData: IExperimentReadOutput): Promise<Record<string, ITemplateDieff>>;
+    calculateDiEfficiencyTemplate(topologies: ITopologyOutput[][], relevantDocuments: string[][][][], resultTimestamps: IResultTimingsTemplate): Promise<ITemplateDieff>;
+    calculateDiEfficiency(timestamps: number[], nResults: number): IDieffOutput;
+    elementwiseMean(data: number[][]): number[];
+    getRetrievalTimestamps(topology: ITopologyOutput, relevantDocuments: number[][]): IRetrievalTimestamps;
+    static writeToFile(data: Record<string, Record<string, ITemplateDieff>>, outputLocation: string): void;
+}
+export interface IDieffOutput {
+    answerDistributionFunction: number[];
+    linSpace: number[];
+    dieff: number;
+}
+export interface IRetrievalTimestamps {
+    zerodEventTimestamps: number[];
+    firstDiscoverTimestamp: number;
+}
+export interface ITemplateDieff {
+    retrievalDieff: IDieffOutput[];
+    resultDieff: IDieffOutput[];
+    totalExecutionTime: number[];
 }

@@ -40,7 +40,8 @@ export class R3Metric{
     public async calculateMetricTemplate(topologies: ITopologyOutput[][], relevantDocuments: string[][][][]){
         const templateMetrics: number[][] = []
         for (let i = 0; i < relevantDocuments.length; i++){
-            const queryMetrics: number[] = [];
+            const queryMetricsUnweighted: number[] = [];
+            const queryMetricsWeighted: number[] = [];
             for (let j = 0; j < relevantDocuments[i].length; j++){
                 if (topologies[i][j] === undefined){
                     console.log(topologies.length)
@@ -61,7 +62,7 @@ export class R3Metric{
                 });
                 // In case there are no relevant documents, the query timed out so R3 can't be computed
                 if (relevanDocumentsAsIndex.length === 0){
-                    queryMetrics.push(-1);
+                    queryMetricsUnweighted.push(-1);
                 }
                 else{
                     const output = await this.metricCalculator.runMetricAll(
@@ -71,10 +72,10 @@ export class R3Metric{
                         topologies[i][j].seedDocuments,
                         numNodes
                     );
-                    queryMetrics.push(output);    
+                    queryMetricsUnweighted.push(output);    
                 }
             }
-            templateMetrics.push(queryMetrics);
+            templateMetrics.push(queryMetricsUnweighted);
         }
         return templateMetrics;
     }
@@ -83,10 +84,9 @@ export class R3Metric{
 
     }
 
-
     public static writeToFile(data: Record<string, Record<string, number[][]>>, outputLocation: string){
         for (const combination of Object.keys(data)){
-            fs.writeFileSync(path.join(outputLocation, `${combination}.json`), JSON.stringify(data))
+            fs.writeFileSync(path.join(outputLocation, `r3-${combination}.json`), JSON.stringify(data[combination]))
         }
     }
 }

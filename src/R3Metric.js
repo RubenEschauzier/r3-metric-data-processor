@@ -65,7 +65,8 @@ class R3Metric {
     async calculateMetricTemplate(topologies, relevantDocuments) {
         const templateMetrics = [];
         for (let i = 0; i < relevantDocuments.length; i++) {
-            const queryMetrics = [];
+            const queryMetricsUnweighted = [];
+            const queryMetricsWeighted = [];
             for (let j = 0; j < relevantDocuments[i].length; j++) {
                 if (topologies[i][j] === undefined) {
                     console.log(topologies.length);
@@ -86,14 +87,14 @@ class R3Metric {
                 });
                 // In case there are no relevant documents, the query timed out so R3 can't be computed
                 if (relevanDocumentsAsIndex.length === 0) {
-                    queryMetrics.push(-1);
+                    queryMetricsUnweighted.push(-1);
                 }
                 else {
                     const output = await this.metricCalculator.runMetricAll(topologies[i][j].edgeList, relevanDocumentsAsIndex, topologies[i][j].dereferenceOrder, topologies[i][j].seedDocuments, numNodes);
-                    queryMetrics.push(output);
+                    queryMetricsUnweighted.push(output);
                 }
             }
-            templateMetrics.push(queryMetrics);
+            templateMetrics.push(queryMetricsUnweighted);
         }
         return templateMetrics;
     }
@@ -101,7 +102,7 @@ class R3Metric {
     }
     static writeToFile(data, outputLocation) {
         for (const combination of Object.keys(data)) {
-            fs.writeFileSync(path.join(outputLocation, `${combination}.json`), JSON.stringify(data));
+            fs.writeFileSync(path.join(outputLocation, `r3-${combination}.json`), JSON.stringify(data[combination]));
         }
     }
 }

@@ -35,6 +35,8 @@ var __importStar = (this && this.__importStar) || (function () {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.DiefficiencyMetricExperiment = void 0;
 const di = __importStar(require("diefficiency"));
+const fs = __importStar(require("fs"));
+const path = __importStar(require("path"));
 class DiefficiencyMetricExperiment {
     constructor(data) {
         this.benchmarkData = data;
@@ -51,18 +53,22 @@ class DiefficiencyMetricExperiment {
     async calculateDiEfficiencyExperiment(experimentData) {
         const relevantDocuments = experimentData.templateToRelevantDocuments;
         const topologies = experimentData.templateToTopologies;
+        const resultTimestamps = experimentData.templateToTimings;
         const templateToDiefficiency = {};
         for (const template of Object.keys(relevantDocuments)) {
             console.log(template);
-            const templateMetrics = await this.calculateDiEfficiencyTemplate(topologies[template], relevantDocuments[template]);
+            const templateMetrics = await this.calculateDiEfficiencyTemplate(topologies[template], relevantDocuments[template], resultTimestamps[template]);
             templateToDiefficiency[template] = templateMetrics;
         }
         return templateToDiefficiency;
     }
-    async calculateDiEfficiencyTemplate(topologies, relevantDocuments) {
-        const templateMetrics = [];
+    async calculateDiEfficiencyTemplate(topologies, relevantDocuments, resultTimestamps) {
+        const templateRetrievalDieff = [];
+        const templateResultDieff = [];
+        const templateExecutionTimes = [];
         for (let i = 0; i < relevantDocuments.length; i++) {
-            const queryMetrics = [];
+            // const queryRetrievalDieff: IDieffOutput[] = [];
+            const queryRetrievalTimestamps = [];
             for (let j = 0; j < relevantDocuments[i].length; j++) {
                 if (topologies[i][j] === undefined) {
                     console.log(topologies.length);
@@ -70,7 +76,7 @@ class DiefficiencyMetricExperiment {
                     console.log(relevantDocuments.length);
                     console.log(relevantDocuments[i].length);
                 }
-                const relevanDocumentsAsIndex = relevantDocuments[i][j].map(x => {
+                const relevantDocumentsAsIndex = relevantDocuments[i][j].map(x => {
                     return x.map(y => {
                         const indexedNode = topologies[i][j].nodeToIndex[y];
                         if (indexedNode === undefined) {
@@ -81,24 +87,73 @@ class DiefficiencyMetricExperiment {
                     });
                 });
                 // In case there are no relevant documents, the query timed out so diefficiency cant be computed
-                if (relevanDocumentsAsIndex.length === 0) {
-                    queryMetrics.push(-1);
-                }
-                else {
-                    const timestamps = this.getRetrievalTimestamps(topologies[i][j], relevanDocumentsAsIndex, 'event');
-                    queryMetrics.push(this.calculateDiEfficiency(timestamps, relevanDocumentsAsIndex.length));
+                if (relevantDocumentsAsIndex.length > 0) {
+                    const timestamps = this.getRetrievalTimestamps(topologies[i][j], relevantDocumentsAsIndex);
+                    queryRetrievalTimestamps.push(timestamps.zerodEventTimestamps);
+                    // queryRetrievalDieff.push(this.calculateDiEfficiency(
+                    //     timestamps.zerodEventTimestamps, 
+                    //     relevantDocumentsAsIndex.length
+                    // ));
                 }
             }
-            templateMetrics.push(queryMetrics);
+            if (queryRetrievalTimestamps.length === 0) {
+                templateRetrievalDieff.push({
+                    answerDistributionFunction: [-1],
+                    dieff: -1,
+                    linSpace: [-1]
+                });
+            }
+            else {
+                const averagedTimestamps = this.elementwiseMean(queryRetrievalTimestamps)
+                    .sort(function (a, b) { return a - b; });
+                const dieffRetrieval = this.calculateDiEfficiency(averagedTimestamps, averagedTimestamps.length);
+                templateRetrievalDieff.push(dieffRetrieval);
+            }
+            if (resultTimestamps.timestamps[i][0] == Number.NaN) {
+                templateResultDieff.push({ answerDistributionFunction: [-1], dieff: -1, linSpace: [-1] });
+                templateExecutionTimes.push(Number.NaN);
+            }
+            else {
+                const dieffResults = this.calculateDiEfficiency(resultTimestamps.timestamps[i], resultTimestamps.timestamps[i].length);
+                templateResultDieff.push(dieffResults);
+                const queryTemplateElapsedTimes = resultTimestamps.timeElapsed[i];
+                templateExecutionTimes.push(queryTemplateElapsedTimes
+                    .reduce((acc, val) => acc + val, 0) / queryTemplateElapsedTimes.length);
+            }
         }
-        return templateMetrics;
+        return {
+            retrievalDieff: templateRetrievalDieff,
+            resultDieff: templateResultDieff,
+            totalExecutionTime: templateExecutionTimes
+        };
     }
     calculateDiEfficiency(timestamps, nResults) {
-        const output = di.DiEfficiencyMetric.answerDistributionFunction(timestamps, 1000);
+        const output = di.DiEfficiencyMetric.answerDistributionFunction(timestamps, 10000);
         const dieff = di.DiEfficiencyMetric.defAtK(nResults, output.answerDist, output.linSpace);
-        return dieff;
+        return { answerDistributionFunction: output.answerDist, dieff: dieff, linSpace: output.linSpace };
     }
-    getRetrievalTimestamps(topology, relevantDocuments, tsType) {
+    elementwiseMean(data) {
+        let maxLenghtArray = 0;
+        for (let k = 0; k < data.length; k++) {
+            if (data[k].length > maxLenghtArray) {
+                maxLenghtArray = data[k].length;
+            }
+        }
+        const means = [];
+        for (let i = 0; i < maxLenghtArray; i++) {
+            let totalAtI = 0;
+            let nAtI = 0;
+            for (let j = 0; j < data.length; j++) {
+                if (data[j][i]) {
+                    totalAtI += data[j][i];
+                    nAtI++;
+                }
+            }
+            means.push(totalAtI / nAtI);
+        }
+        return means;
+    }
+    getRetrievalTimestamps(topology, relevantDocuments) {
         const engineTraversalPath = topology.dereferenceOrder;
         // Iterate over engine traversal path, update to visit for result, after update check if new list is empty
         // if it is empty we have +1 result
@@ -120,23 +175,38 @@ class DiefficiencyMetricExperiment {
                     nodes.splice(nodes.indexOf(newVisitedNode[1]), 1);
                     progressUntillResult[j] = nodes;
                     if (progressUntillResult[j].length === 0) {
-                        if (tsType === 'time') {
-                            // TODO get timestamp from topology dereference metadata and put it in here
+                        const nodeMetadata = topology.nodeMetadata[newVisitedNode[1]];
+                        if (nodeMetadata.dereferenceTimestamp) {
+                            eventTimestamps.push(nodeMetadata.dereferenceTimestamp);
                         }
-                        if (tsType == 'event') {
-                            // At traversal step i have we found a new result
-                            eventTimestamps.push(i);
+                        else {
+                            // some instances (like short-4) use the seed document as source
+                            // In this case there is no dereference timestamp (oops), 
+                            // but dereference = discover timestamp
+                            eventTimestamps.push(nodeMetadata.discoverTimestamp);
                         }
                     }
                 }
             }
         }
-        return eventTimestamps;
+        // Zero the timestamps by taking the first discover timestamp as first timestamp
+        let firstDiscoverTimestamp = 0;
+        let i = 0;
+        while (firstDiscoverTimestamp === 0) {
+            const metadata = topology.nodeMetadata[i];
+            if (metadata.discoverTimestamp) {
+                firstDiscoverTimestamp = metadata.discoverTimestamp;
+            }
+            i++;
+        }
+        const zerodEventTimestamps = eventTimestamps.map(x => x - firstDiscoverTimestamp)
+            .sort(function (a, b) { return a - b; });
+        return { zerodEventTimestamps, firstDiscoverTimestamp };
     }
-    getAnswerDistribution(retrievalTimestamps) {
-        const distFunction = di.DiEfficiencyMetric.answerDistributionFunction(retrievalTimestamps, 1000);
-    }
-    getResultRetrievalDistribution() {
+    static writeToFile(data, outputLocation) {
+        for (const combination of Object.keys(data)) {
+            fs.writeFileSync(path.join(outputLocation, `dieff-${combination}.json`), JSON.stringify(data[combination]));
+        }
     }
 }
 exports.DiefficiencyMetricExperiment = DiefficiencyMetricExperiment;

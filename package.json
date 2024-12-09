@@ -10,9 +10,11 @@
   "dependencies": {
     "comunica-experiment-performance-metric": "file:./../r3-metric-library",
     "diefficiency": "file:./../diefficiency",
+    "papaparse": "^5.4.1",
     "typescript": "^5.7.2"
   },
   "devDependencies": {
-    "@types/node": "^22.10.1"
+    "@types/node": "^22.10.1",
+    "@types/papaparse": "^5.3.15"
   }
 }

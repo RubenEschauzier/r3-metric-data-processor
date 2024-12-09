@@ -37,16 +37,18 @@ const path = __importStar(require("path"));
 const DataIngestor_1 = require("../src/DataIngestor");
 const R3Metric_1 = require("../src/R3Metric");
 const DiefficiencyMetric_1 = require("../src/DiefficiencyMetric");
-const ingestor = new DataIngestor_1.DataIngestor(path.join(__dirname, "..", "data", "output"));
+const ingestor = new DataIngestor_1.DataIngestor(path.join(__dirname, "..", "data", "output-temp"));
 const processedData = ingestor.read();
-const metricOutputDir = path.join(__dirname, "..", "data", "calculated-metrics");
+const r3MetricOutputDir = path.join(__dirname, "..", "data", "calculated-metrics", "r3-metric");
+const dieffMetricOutputDir = path.join(__dirname, "..", "data", "calculated-metrics", "dieff-metrics");
 const r3Metric = new R3Metric_1.R3Metric(processedData);
 const diMetric = new DiefficiencyMetric_1.DiefficiencyMetricExperiment(processedData);
-diMetric.run().then(x => {
-    console.log(x);
+// diMetric.run().then(x => {
+//     DiefficiencyMetricExperiment.writeToFile(x, dieffMetricOutputDir)
+//     console.log(x)
+//     // R3Metric.writeToFile(x, metricOutputDir);
+// });
+r3Metric.run().then(x => {
     // R3Metric.writeToFile(x, metricOutputDir);
 });
-// metric.run().then(x => {
-//     R3Metric.writeToFile(x, metricOutputDir);
-// });
 //# sourceMappingURL=process.js.map
