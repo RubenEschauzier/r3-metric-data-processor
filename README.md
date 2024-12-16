@@ -2,7 +2,7 @@
 
 In this repository, we provide the code and links to other repositories used to produce the results for the paper titled: 
 
-### Reproducing the Experiment of The Paper
+### Reproducing the Experiments of The Paper
 
 In the paper, we benchmark 16 existing link prioritization algorithms. These prioritization algorithms are implemented in [comunica-feature-link-traversal](https://github.com/comunica/comunica-feature-link-traversal) on the following [branch](https://github.com/RubenEschauzier/comunica-feature-link-traversal/tree/feature/reimplement-prioritization). These algorithms are fully modular and primarily rely on systems implemented in the base Comunica engine. Example configurations are provided and can be recognised by the algorithm name. 
 
