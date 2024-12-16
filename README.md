@@ -48,6 +48,7 @@ Note that the `query-source-identify` configurations should replace the default 
 
 The experiment to calculate the $R^{3}$, $Dief$, and $DiefD$ for the paper produces output in the following format: 
 
+```
 output/
 ├── combination_0/
 │   └── interactive-discover-1
@@ -60,6 +61,7 @@ output/
 │   └── ...
 │   └── interactive-short-1
 └── ...
+```
 Simply paste this into the `/data` folder and run
 
 ```
