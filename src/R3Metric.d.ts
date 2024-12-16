@@ -7,7 +7,7 @@ export declare class R3Metric {
     run(): Promise<Record<string, Record<string, ITemplateR3Metric>>>;
     calculateMetricExperiment(experimentData: IExperimentReadOutput): Promise<Record<string, ITemplateR3Metric>>;
     calculateMetricTemplate(topologies: ITopologyOutput[][], relevantDocuments: string[][][][]): Promise<ITemplateR3Metric>;
-    static writeToFile(data: Record<string, Record<string, number[][]>>, outputLocation: string): void;
+    static writeToFile(data: Record<string, Record<string, ITemplateR3Metric>>, outputLocation: string): void;
 }
 export interface ITemplateR3Metric {
     unweighted: number[][];

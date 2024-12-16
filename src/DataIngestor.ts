@@ -1,6 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { parse, ParseResult } from 'papaparse';
+import { ConstructOracleInput } from './ConstructOracleInput';
 
 export class DataIngestor{
     public dataLocation: string;
@@ -16,6 +17,7 @@ export class DataIngestor{
         const experiments = fs.readdirSync(this.dataLocation);
         const experimentOutputs: Record<string, IExperimentReadOutput> = {}
         for (const experiment of experiments){
+            console.log(`Reading ${experiment}`)
             // TODO: Push to final output
             const experimentOutput = this.readFullExperiment(path.join(this.dataLocation, experiment));
             experimentOutputs[experiment] = experimentOutput;
@@ -192,6 +194,7 @@ export class DataIngestor{
                 'utf-8'
             )
         );
+        const oracleRccValues: Record<string, Record<string, number>> = {}
         const templateToResults: Record<string , Record<any,any>[][][]> = {};
         const templateToRelevantDocuments: Record<string, string[][][][]> = {}; 
         const templateToTopologies: Record<string, ITopologyOutput[][]> = {};
@@ -205,10 +208,20 @@ export class DataIngestor{
             const results = this.getResultsData(
                 path.join(experimentLocation, pathToQuery), query
             );
+            const queryToRcc: Record<string, number> = {};
+            // Regardless of # replications the results stay the same
             const relevantDocuments = this.constructRelevantDocuments(results)
             const topologiesQueryInstantiation = this.getTopologies(
                 path.join(experimentLocation, pathToQuery)
             );
+            for (const result of results[0]){
+                for (const prov of result.provenance){
+                    queryToRcc[prov] = (queryToRcc[prov] ?? 0) + 1;
+                }
+            }
+            const queryToRccFull = ConstructOracleInput.run(topologiesQueryInstantiation[0], queryToRcc)
+            oracleRccValues[base64Query] = queryToRccFull;
+
             templateToRelevantDocuments[template].push(relevantDocuments);
             templateToTopologies[template].push(topologiesQueryInstantiation);
             templateToResults[template].push(results)
@@ -220,7 +233,7 @@ export class DataIngestor{
           });
         const templateToTimings = this.processExperimentQueryTimes(parsedQueryTimes);
           
-        return { templateToRelevantDocuments, templateToTopologies, templateToResults, templateToTimings }
+        return { templateToRelevantDocuments, templateToTopologies, templateToResults, templateToTimings, oracleRccValues }
     }
 
     public processExperimentQueryTimes(queryTimes: ParseResult<any>){
@@ -268,6 +281,7 @@ export interface IExperimentReadOutput{
     templateToTopologies: Record<string, ITopologyOutput[][]>;
     templateToResults: Record<string , Record<any,any>[][][]>;
     templateToTimings: Record<string, IResultTimingsTemplate>;
+    oracleRccValues: Record<string, Record<string, number>>;
 }
 
 /**

@@ -15,7 +15,7 @@ export class R3Metric{
     public async run(){
         const experimentOutputs: Record<string, Record<string, ITemplateR3Metric>> = {};
         for (const experiment of Object.keys(this.benchmarkData)){
-            console.log(`Calculating for ${experiment}`);
+            console.log(`Calculating R3 for ${experiment}`);
             const templateMetrics = 
                 await this.calculateMetricExperiment(this.benchmarkData[experiment]);
             experimentOutputs[experiment] = templateMetrics;
@@ -67,9 +67,10 @@ export class R3Metric{
                 // In case there are no relevant documents, the query timed out so R3 can't be computed
                 if (relevanDocumentsAsIndex.length === 0){
                     queryMetricsUnweighted.push(-1);
+                    queryMetricsHttp.push(-1);
                 }
                 else if (topologies[i][j].edgeList.length === 1){
-                    queryMetricsUnweighted.push(1)
+                    queryMetricsUnweighted.push(1);
                     queryMetricsHttp.push(1);
                 }
                 else{
@@ -97,7 +98,7 @@ export class R3Metric{
         return templateMetrics;
     }
 
-    public static writeToFile(data: Record<string, Record<string, number[][]>>, outputLocation: string){
+    public static writeToFile(data: Record<string, Record<string, ITemplateR3Metric>>, outputLocation: string){
         for (const combination of Object.keys(data)){
             fs.writeFileSync(path.join(outputLocation, `r3-${combination}.json`), JSON.stringify(data[combination]))
         }

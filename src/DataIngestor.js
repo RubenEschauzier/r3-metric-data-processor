@@ -37,6 +37,7 @@ exports.DataIngestor = void 0;
 const fs = __importStar(require("fs"));
 const path = __importStar(require("path"));
 const papaparse_1 = require("papaparse");
+const ConstructOracleInput_1 = require("./ConstructOracleInput");
 class DataIngestor {
     constructor(dataLocation) {
         // We can make this setable in future versions if this gets reused.
@@ -48,6 +49,7 @@ class DataIngestor {
         const experiments = fs.readdirSync(this.dataLocation);
         const experimentOutputs = {};
         for (const experiment of experiments) {
+            console.log(`Reading ${experiment}`);
             // TODO: Push to final output
             const experimentOutput = this.readFullExperiment(path.join(this.dataLocation, experiment));
             experimentOutputs[experiment] = experimentOutput;
@@ -210,6 +212,7 @@ class DataIngestor {
     }
     readFullExperiment(experimentLocation) {
         const base64ToDirectory = JSON.parse(fs.readFileSync(path.join(experimentLocation, 'base64ToDirectory.json'), 'utf-8'));
+        const oracleRccValues = {};
         const templateToResults = {};
         const templateToRelevantDocuments = {};
         const templateToTopologies = {};
@@ -220,8 +223,17 @@ class DataIngestor {
             templateToTopologies[template] ?? (templateToTopologies[template] = []);
             templateToResults[template] ?? (templateToResults[template] = []);
             const results = this.getResultsData(path.join(experimentLocation, pathToQuery), query);
+            const queryToRcc = {};
+            // Regardless of # replications the results stay the same
             const relevantDocuments = this.constructRelevantDocuments(results);
             const topologiesQueryInstantiation = this.getTopologies(path.join(experimentLocation, pathToQuery));
+            for (const result of results[0]) {
+                for (const prov of result.provenance) {
+                    queryToRcc[prov] = (queryToRcc[prov] ?? 0) + 1;
+                }
+            }
+            const queryToRccFull = ConstructOracleInput_1.ConstructOracleInput.run(topologiesQueryInstantiation[0], queryToRcc);
+            oracleRccValues[base64Query] = queryToRccFull;
             templateToRelevantDocuments[template].push(relevantDocuments);
             templateToTopologies[template].push(topologiesQueryInstantiation);
             templateToResults[template].push(results);
@@ -232,7 +244,7 @@ class DataIngestor {
             header: true, // Use the first row as the header
         });
         const templateToTimings = this.processExperimentQueryTimes(parsedQueryTimes);
-        return { templateToRelevantDocuments, templateToTopologies, templateToResults, templateToTimings };
+        return { templateToRelevantDocuments, templateToTopologies, templateToResults, templateToTimings, oracleRccValues };
     }
     processExperimentQueryTimes(queryTimes) {
         var _a;

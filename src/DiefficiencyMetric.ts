@@ -13,7 +13,7 @@ export class DiefficiencyMetricExperiment{
     public async run(): Promise<Record<string, Record<string, ITemplateDieff>>> {
         const experimentOutputs: Record<string, Record<string, ITemplateDieff>> = {};
         for (const experiment of Object.keys(this.benchmarkData)){
-            console.log(`Calculating for ${experiment}`);
+            console.log(`Calculating Dieff for ${experiment}`);
             const templateMetrics = 
                 await this.calculateDiEfficiencyExperiment(this.benchmarkData[experiment]);
             experimentOutputs[experiment] = templateMetrics;
@@ -27,7 +27,6 @@ export class DiefficiencyMetricExperiment{
         const resultTimestamps = experimentData.templateToTimings;
         const templateToDiefficiency: Record<string, ITemplateDieff> = {};
         for (const template of Object.keys(relevantDocuments)){
-            console.log(template)
             const templateMetrics = await this.calculateDiEfficiencyTemplate(
                 topologies[template], relevantDocuments[template], resultTimestamps[template]
             );

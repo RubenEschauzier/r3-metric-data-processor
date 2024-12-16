@@ -44,7 +44,7 @@ class DiefficiencyMetricExperiment {
     async run() {
         const experimentOutputs = {};
         for (const experiment of Object.keys(this.benchmarkData)) {
-            console.log(`Calculating for ${experiment}`);
+            console.log(`Calculating Dieff for ${experiment}`);
             const templateMetrics = await this.calculateDiEfficiencyExperiment(this.benchmarkData[experiment]);
             experimentOutputs[experiment] = templateMetrics;
         }
@@ -56,7 +56,6 @@ class DiefficiencyMetricExperiment {
         const resultTimestamps = experimentData.templateToTimings;
         const templateToDiefficiency = {};
         for (const template of Object.keys(relevantDocuments)) {
-            console.log(template);
             const templateMetrics = await this.calculateDiEfficiencyTemplate(topologies[template], relevantDocuments[template], resultTimestamps[template]);
             templateToDiefficiency[template] = templateMetrics;
         }

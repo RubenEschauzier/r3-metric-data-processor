@@ -46,6 +46,7 @@ export interface IExperimentReadOutput {
     templateToTopologies: Record<string, ITopologyOutput[][]>;
     templateToResults: Record<string, Record<any, any>[][][]>;
     templateToTimings: Record<string, IResultTimingsTemplate>;
+    oracleRccValues: Record<string, Record<string, number>>;
 }
 /**
  * Interface of the processed data from the statisticIntermediateResults output log of Comunica

@@ -45,7 +45,7 @@ class R3Metric {
     async run() {
         const experimentOutputs = {};
         for (const experiment of Object.keys(this.benchmarkData)) {
-            console.log(`Calculating for ${experiment}`);
+            console.log(`Calculating R3 for ${experiment}`);
             const templateMetrics = await this.calculateMetricExperiment(this.benchmarkData[experiment]);
             experimentOutputs[experiment] = templateMetrics;
         }
@@ -90,6 +90,7 @@ class R3Metric {
                 // In case there are no relevant documents, the query timed out so R3 can't be computed
                 if (relevanDocumentsAsIndex.length === 0) {
                     queryMetricsUnweighted.push(-1);
+                    queryMetricsHttp.push(-1);
                 }
                 else if (topologies[i][j].edgeList.length === 1) {
                     queryMetricsUnweighted.push(1);
