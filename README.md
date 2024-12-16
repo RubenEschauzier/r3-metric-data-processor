@@ -71,3 +71,18 @@ The metric results will be produced in directory `/data/calculated-metrics` and 
 
 ### Creating the Visualizations from the Paper
 
+The figures from the paper can be recreated using the following python [repository](https://github.com/RubenEschauzier/Visualize-R3-Metric-Data). To recreate the timings related plots, you can paste the experiment output in the data folder. The expected format is as follows:
+```
+timings/
+├── combination_0/
+│   └── ...
+│   └── query-times.csv
+├── combination_1/
+│   └── ...
+│   └── query-times.csv
+└── ...
+```
+Then, run the `create_timings_plot.py` file and it will save the plots to `output/plots/`. The same goes for the $R^{3}$ metrics, however this expects the data resulting from calculating the $R^3$ metric using this repo in the `data/r3_data/` folder. 
+To create the table of the percentage of queries 10% better or worse than `breadth-first` traversal, run `create_better_worse_tables.py`
+
+
