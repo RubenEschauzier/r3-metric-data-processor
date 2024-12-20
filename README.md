@@ -1,16 +1,18 @@
 ## Data Processor to Calculate $R^3$ Metric from Comunica Output
 
-In this repository, we provide the code and links to other repositories used to produce the results for the paper titled: 
+This repository provides the code and links to other repositories used to produce the results presented in the paper titled:
 
-### Reproducing the Experiments of The Paper
+### Reproducing the Experiments of the Paper
 
-In the paper, we benchmark 16 existing link prioritization algorithms. These prioritization algorithms are implemented in [comunica-feature-link-traversal](https://github.com/comunica/comunica-feature-link-traversal) on the following [branch](https://github.com/RubenEschauzier/comunica-feature-link-traversal/tree/feature/reimplement-prioritization). These algorithms are fully modular and primarily rely on systems implemented in the base Comunica engine. Example configurations are provided and can be recognised by the algorithm name. 
+In the paper, we benchmark 16 existing link prioritization algorithms. These prioritization algorithms are implemented in [comunica-feature-link-traversal](https://github.com/comunica/comunica-feature-link-traversal) on this [branch](https://github.com/RubenEschauzier/comunica-feature-link-traversal/tree/feature/reimplement-prioritization). The algorithms are fully modular and primarily rely on systems implemented in the base Comunica engine. Example configurations are provided and can be identified by the algorithm name.
 
-We provide two easy to reproduce [experiments](https://github.com/RubenEschauzier/link-prioritization-experiments/tree/master) used to produce the timing data and the $R^{3}$ and $DiefD$ data used in our paper.
+We provide two easily reproducible [experiments](https://github.com/RubenEschauzier/link-prioritization-experiments/tree/master) that were used to generate the timing data as well as the $R^{3}$ and $DiefD$ metrics reported in the paper.
 
 ### Reproducing the Calculation of the $R^3$ Metric and DiefD
 
-To calculate the $R^3$ and $DiefD$ metric, an engine has the track the traversed topology, its dereference order, and why-provenance for results. We provide a modular configuration that tracks the required information and writes it to a file in a configurable directory on the following [branch](https://github.com/RubenEschauzier/comunica-feature-link-traversal/tree/feature/link-prioritization-r3-metric). This branch includes the prioritization algorithms used in the paper and the configurations required to run them and collect the $R^3$ and $DiefD$ data. In case you want to calculate the $R^3$ and $DiefD$ metrics for any other configuration, the following lines should be added to your config file.
+To calculate the $R^3$ and $DiefD$ metrics, an engine must track the traversed topology, its dereference order, and why-provenance for results. We provide a modular configuration that tracks the required information and writes it to a file in a configurable directory on this [branch](https://github.com/RubenEschauzier/comunica-feature-link-traversal/tree/feature/link-prioritization-r3-metric). This branch includes the prioritization algorithms used in the paper and the configurations required to run them and collect the $R^3$ and $DiefD$ data. 
+
+If you want to calculate the $R^3$ and $DiefD$ metrics for any other configuration, the following lines should be added to your config file.
 
 ```
 "import": [
@@ -42,11 +44,11 @@ To calculate the $R^3$ and $DiefD$ metric, an engine has the track the traversed
   }
 ]
 ```
-Note that the `query-source-identify` configurations should replace the default `query-source-identify` configurations in Comunica. By adding this alternate version, bindings produced by Comunica are annotated with their source. Next, the `merge-bindings-context` configurations allow these source annotations to propegate through the joins. Finally, the `iterator-transform` and `query-operation` configurations allow Comunica to wrap intermediate solution producing streams, thus enabling us to record information about data flowing through Comunica. The actor added through `@graph` creates the file writers to record the information produced during query execution. Note that the `baseDirectoryExperiment` points to the directory the files will be written to.
+Note that the `query-source-identify` configurations should replace the default `query-source-identify` configurations in Comunica. By adding this alternate version, bindings produced by Comunica are annotated with their source. Next, the `merge-bindings-context` configurations allow these source annotations to propagate through the joins. Finally, the `iterator-transform` and `query-operation` configurations allow Comunica to wrap intermediate solution-producing streams, thus enabling us to record information about data flowing through Comunica. The actor added via `@graph` creates file writers to record information generated during query execution. Note that the `baseDirectoryExperiment` specifies the directory where the files will be written.
 
 ### Processing the Output Data To Calculate the $R^{3}$, $Dief$, and $DiefD$ Metrics
 
-The experiment to calculate the $R^{3}$, $Dief$, and $DiefD$ for the paper produces output in the following format: 
+The experiment to calculate the $R^{3}$, $Dief$, and $DiefD$ metrics for the paper produces output in the following format: 
 
 ```
 output/
@@ -62,16 +64,20 @@ output/
 │   └── interactive-short-1
 └── ...
 ```
-Simply paste this into the `/data` folder and run
+Simply paste this into the `/data` folder and run:
 
 ```
 node --max-old-space-size=8192 bin/process.js
 ```
-The metric results will be produced in directory `/data/calculated-metrics` and the data used for the oracle algorithm will be produced in `/data/processed-data`.
+
+The metric results will be produced in the directory `/data/calculated-metrics`, and the data used for the oracle algorithm will be produced in `/data/processed-data`. 
+
+If you want to manually calculate the $R^{3}$ metric, use the following [repository](https://github.com/RubenEschauzier/Relevant-Retrieval-Ratio).
 
 ### Creating the Visualizations from the Paper
 
-The figures from the paper can be recreated using the following python [repository](https://github.com/RubenEschauzier/Visualize-R3-Metric-Data). To recreate the timings related plots, you can paste the experiment output in the data folder. The expected format is as follows:
+The figures from the paper can be recreated using the following Python [repository](https://github.com/RubenEschauzier/Visualize-R3-Metric-Data). To recreate the timing-related plots, paste the experiment output into the `data` folder. The expected format is as follows:
+
 ```
 timings/
 ├── combination_0/
@@ -82,7 +88,7 @@ timings/
 │   └── query-times.csv
 └── ...
 ```
-Then, run the `create_timings_plot.py` file and it will save the plots to `output/plots/`. The same goes for the $R^{3}$ metrics, however this expects the data resulting from calculating the $R^3$ metric using this repo in the `data/r3_data/` folder. 
-To create the table of the percentage of queries 10% better or worse than `breadth-first` traversal, run `create_better_worse_tables.py`
 
+Then, run the `create_timings_plot.py` file, and it will save the plots to `output/plots/`. The same applies to the $R^{3}$ metrics; however, this expects the data resulting from calculating the $R^3$ metric using [this repository](https://github.com/RubenEschauzier/Relevant-Retrieval-Ratio) to be placed in the `data/r3_data/` folder. 
 
+To create the table showing the percentage of queries that are 10% better or worse than `breadth-first` traversal, run `create_better_worse_tables.py`.
