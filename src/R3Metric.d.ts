@@ -1,4 +1,4 @@
-import * as r3 from 'comunica-experiment-performance-metric';
+import * as r3 from 'relevant-retrieval-ratio';
 import { IExperimentReadOutput, ITopologyOutput } from './DataIngestor';
 export declare class R3Metric {
     benchmarkData: Record<string, IExperimentReadOutput>;

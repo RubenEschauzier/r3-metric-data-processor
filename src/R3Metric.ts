@@ -1,4 +1,4 @@
-import * as r3 from 'comunica-experiment-performance-metric';
+import * as r3 from 'relevant-retrieval-ratio';
 import { IExperimentReadOutput, ITopologyOutput } from './DataIngestor';
 import * as fs from 'fs';
 import * as path from 'path';

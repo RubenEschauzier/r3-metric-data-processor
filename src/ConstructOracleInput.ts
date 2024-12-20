@@ -1,4 +1,4 @@
-import { IExperimentReadOutput, ITopologyOutput } from "./DataIngestor";
+import { ITopologyOutput } from "./DataIngestor";
 const dijkstra = require("dijkstrajs");
 
 export class ConstructOracleInput{

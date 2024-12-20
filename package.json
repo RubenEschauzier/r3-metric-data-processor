@@ -8,8 +8,8 @@
     "build-watch:ts": "tsc --watch"
   },
   "dependencies": {
-    "comunica-experiment-performance-metric": "file:./../r3-metric-library",
-    "diefficiency": "file:./../diefficiency",
+    "relevant-retrieval-ratio": "^1.0.2",
+    "diefficiency": "^1.0.4",
     "dijkstrajs": "^1.0.3",
     "papaparse": "^5.4.1",
     "typescript": "^5.7.2"

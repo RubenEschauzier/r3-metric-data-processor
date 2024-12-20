@@ -34,7 +34,7 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.R3Metric = void 0;
-const r3 = __importStar(require("comunica-experiment-performance-metric"));
+const r3 = __importStar(require("relevant-retrieval-ratio"));
 const fs = __importStar(require("fs"));
 const path = __importStar(require("path"));
 class R3Metric {
