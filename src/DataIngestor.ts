@@ -13,16 +13,15 @@ export class DataIngestor{
 
     }
 
-    public read(){
+    public* read(): Generator<IDataIngested>{
         const experiments = fs.readdirSync(this.dataLocation);
         const experimentOutputs: Record<string, IExperimentReadOutput> = {}
         for (const experiment of experiments){
             console.log(`Reading ${experiment}`)
             // TODO: Push to final output
             const experimentOutput = this.readFullExperiment(path.join(this.dataLocation, experiment));
-            experimentOutputs[experiment] = experimentOutput;
+            yield {experiment, experimentOutput};
         }
-        return  experimentOutputs;
     }
     /**
      * Read result time stamps and total elapsed time per query to construct diefficiency with
@@ -97,7 +96,7 @@ export class DataIngestor{
         for (let i = 0; i < resultsAllInstantiations.length; i++){
             const queryRelevant: string[][] = [];
             for (let j = 0; j < resultsAllInstantiations[i].length; j++){
-                queryRelevant.push(resultsAllInstantiations[i][j].provenance)
+                queryRelevant.push(resultsAllInstantiations[i][j].provenance.map((x: string) => x.trim()))
             }
             relevantDocuments.push(queryRelevant);
         }
@@ -174,17 +173,34 @@ export class DataIngestor{
     }
 
     public constructEdgesInOrder(topology: any, weightType: 'unweighted' | 'http' | 'documentSize'){
-        return topology.edgesInOrder.map((edge: number[]) => { 
-            const weightedEdge = [edge[0], edge[1], 1];
-            if(weightType == 'http'){
-                const requestTime = topology.nodeMetadata[edge[1]]['httpRequestTime'];
-                if (requestTime && requestTime > 0) weightedEdge[2] = requestTime
+        const weightedEdgesInOrder = [];
+        for (const dereferencedNode of topology.dereferenceOrder){
+            for (const edge of topology.edgesInOrder){
+                if (edge[1] === dereferencedNode){
+                    const weightedEdge = [edge[0], edge[1], 1];
+                    if(weightType == 'http'){
+                        const requestTime = topology.nodeMetadata[edge[1]]['httpRequestTime'];
+                        if (requestTime && requestTime > 0) weightedEdge[2] = requestTime
+                    }
+                    if(weightType=='documentSize'){
+                    }
+                    weightedEdgesInOrder.push(weightedEdge);
+                    break;
+                }
             }
-            if(weightType=='documentSize'){
+        }
+        return weightedEdgesInOrder
+        // return topology.edgesInOrder.map((edge: number[]) => { 
+        //     const weightedEdge = [edge[0], edge[1], 1];
+        //     if(weightType == 'http'){
+        //         const requestTime = topology.nodeMetadata[edge[1]]['httpRequestTime'];
+        //         if (requestTime && requestTime > 0) weightedEdge[2] = requestTime
+        //     }
+        //     if(weightType=='documentSize'){
 
-            }
-            return weightedEdge
-        });
+        //     }
+        //     return weightedEdge
+        // });
     }
 
     public readFullExperiment(experimentLocation: string): IExperimentReadOutput{
@@ -201,6 +217,10 @@ export class DataIngestor{
         Object.entries(base64ToDirectory).forEach(([base64Query, pathToQuery]) => {
             const query = atob(base64Query);
             const template = pathToQuery.split("/")[0];
+            if (!fs.existsSync(path.join(experimentLocation, pathToQuery))){
+                console.warn(`Does not exist: ${path.join(experimentLocation, pathToQuery)}`)
+                return;
+            }
             templateToRelevantDocuments[template] ??= [];
             templateToTopologies[template] ??= [];
             templateToResults[template] ??= [];
@@ -224,7 +244,7 @@ export class DataIngestor{
 
             templateToRelevantDocuments[template].push(relevantDocuments);
             templateToTopologies[template].push(topologiesQueryInstantiation);
-            templateToResults[template].push(results)
+            templateToResults[template].push(results)    
         });
         const queryTimesRaw = fs.readFileSync(path.join(experimentLocation, 'query-times.csv'), 'utf8');
         const parsedQueryTimes = parse(queryTimesRaw, {
@@ -232,8 +252,13 @@ export class DataIngestor{
             header: true,   // Use the first row as the header
           });
         const templateToTimings = this.processExperimentQueryTimes(parsedQueryTimes);
+        const filteredTemplateToTimings: Record<string, IResultTimingsTemplate> = Object.fromEntries(
+            Object.entries(templateToTimings).filter(
+              ([key, _]) => !key.toLowerCase().includes("short")
+            )
+        );
           
-        return { templateToRelevantDocuments, templateToTopologies, templateToResults, templateToTimings, oracleRccValues }
+        return { templateToRelevantDocuments, templateToTopologies, templateToResults, templateToTimings: filteredTemplateToTimings, oracleRccValues }
     }
 
     public processExperimentQueryTimes(queryTimes: ParseResult<any>){
@@ -308,4 +333,9 @@ export interface IResultTimingsTemplate{
     timestamps: number[][];
     timeElapsed: number[][];
     timeOut: boolean[];
+}
+
+export interface IDataIngested{
+    experiment: string;
+    experimentOutput: IExperimentReadOutput;
 }

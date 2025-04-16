@@ -1,8 +1,7 @@
 import { IExperimentReadOutput, IResultTimingsTemplate, ITopologyOutput } from "./DataIngestor";
 export declare class DiefficiencyMetricExperiment {
-    benchmarkData: Record<string, IExperimentReadOutput>;
-    constructor(data: Record<string, IExperimentReadOutput>);
-    run(): Promise<Record<string, Record<string, ITemplateDieff>>>;
+    constructor();
+    run(experiment: string, experimentOutput: IExperimentReadOutput): Promise<Record<string, ITemplateDieff>>;
     calculateDiEfficiencyExperiment(experimentData: IExperimentReadOutput): Promise<Record<string, ITemplateDieff>>;
     calculateDiEfficiencyTemplate(topologies: ITopologyOutput[][], relevantDocuments: string[][][][], resultTimestamps: IResultTimingsTemplate): Promise<ITemplateDieff>;
     calculateDiEfficiency(timestamps: number[], nResults: number): IDieffOutput;

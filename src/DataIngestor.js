@@ -45,16 +45,15 @@ class DataIngestor {
         this.topologyFilePattern = /^StatisticTraversalTopology_\d+\.txt$/;
         this.dataLocation = dataLocation;
     }
-    read() {
+    *read() {
         const experiments = fs.readdirSync(this.dataLocation);
         const experimentOutputs = {};
         for (const experiment of experiments) {
             console.log(`Reading ${experiment}`);
             // TODO: Push to final output
             const experimentOutput = this.readFullExperiment(path.join(this.dataLocation, experiment));
-            experimentOutputs[experiment] = experimentOutput;
+            yield { experiment, experimentOutput };
         }
-        return experimentOutputs;
     }
     /**
      * Read result time stamps and total elapsed time per query to construct diefficiency with
@@ -125,7 +124,7 @@ class DataIngestor {
         for (let i = 0; i < resultsAllInstantiations.length; i++) {
             const queryRelevant = [];
             for (let j = 0; j < resultsAllInstantiations[i].length; j++) {
-                queryRelevant.push(resultsAllInstantiations[i][j].provenance);
+                queryRelevant.push(resultsAllInstantiations[i][j].provenance.map((x) => x.trim()));
             }
             relevantDocuments.push(queryRelevant);
         }
@@ -198,17 +197,34 @@ class DataIngestor {
         return edgeList;
     }
     constructEdgesInOrder(topology, weightType) {
-        return topology.edgesInOrder.map((edge) => {
-            const weightedEdge = [edge[0], edge[1], 1];
-            if (weightType == 'http') {
-                const requestTime = topology.nodeMetadata[edge[1]]['httpRequestTime'];
-                if (requestTime && requestTime > 0)
-                    weightedEdge[2] = requestTime;
+        const weightedEdgesInOrder = [];
+        for (const dereferencedNode of topology.dereferenceOrder) {
+            for (const edge of topology.edgesInOrder) {
+                if (edge[1] === dereferencedNode) {
+                    const weightedEdge = [edge[0], edge[1], 1];
+                    if (weightType == 'http') {
+                        const requestTime = topology.nodeMetadata[edge[1]]['httpRequestTime'];
+                        if (requestTime && requestTime > 0)
+                            weightedEdge[2] = requestTime;
+                    }
+                    if (weightType == 'documentSize') {
+                    }
+                    weightedEdgesInOrder.push(weightedEdge);
+                    break;
+                }
             }
-            if (weightType == 'documentSize') {
-            }
-            return weightedEdge;
-        });
+        }
+        return weightedEdgesInOrder;
+        // return topology.edgesInOrder.map((edge: number[]) => { 
+        //     const weightedEdge = [edge[0], edge[1], 1];
+        //     if(weightType == 'http'){
+        //         const requestTime = topology.nodeMetadata[edge[1]]['httpRequestTime'];
+        //         if (requestTime && requestTime > 0) weightedEdge[2] = requestTime
+        //     }
+        //     if(weightType=='documentSize'){
+        //     }
+        //     return weightedEdge
+        // });
     }
     readFullExperiment(experimentLocation) {
         const base64ToDirectory = JSON.parse(fs.readFileSync(path.join(experimentLocation, 'base64ToDirectory.json'), 'utf-8'));
@@ -219,6 +235,10 @@ class DataIngestor {
         Object.entries(base64ToDirectory).forEach(([base64Query, pathToQuery]) => {
             const query = atob(base64Query);
             const template = pathToQuery.split("/")[0];
+            if (!fs.existsSync(path.join(experimentLocation, pathToQuery))) {
+                console.warn(`Does not exist: ${path.join(experimentLocation, pathToQuery)}`);
+                return;
+            }
             templateToRelevantDocuments[template] ?? (templateToRelevantDocuments[template] = []);
             templateToTopologies[template] ?? (templateToTopologies[template] = []);
             templateToResults[template] ?? (templateToResults[template] = []);
@@ -244,7 +264,8 @@ class DataIngestor {
             header: true, // Use the first row as the header
         });
         const templateToTimings = this.processExperimentQueryTimes(parsedQueryTimes);
-        return { templateToRelevantDocuments, templateToTopologies, templateToResults, templateToTimings, oracleRccValues };
+        const filteredTemplateToTimings = Object.fromEntries(Object.entries(templateToTimings).filter(([key, _]) => !key.toLowerCase().includes("short")));
+        return { templateToRelevantDocuments, templateToTopologies, templateToResults, templateToTimings: filteredTemplateToTimings, oracleRccValues };
     }
     processExperimentQueryTimes(queryTimes) {
         var _a;

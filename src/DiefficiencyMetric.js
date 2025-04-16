@@ -38,17 +38,11 @@ const di = __importStar(require("diefficiency"));
 const fs = __importStar(require("fs"));
 const path = __importStar(require("path"));
 class DiefficiencyMetricExperiment {
-    constructor(data) {
-        this.benchmarkData = data;
+    constructor() {
     }
-    async run() {
-        const experimentOutputs = {};
-        for (const experiment of Object.keys(this.benchmarkData)) {
-            console.log(`Calculating Dieff for ${experiment}`);
-            const templateMetrics = await this.calculateDiEfficiencyExperiment(this.benchmarkData[experiment]);
-            experimentOutputs[experiment] = templateMetrics;
-        }
-        return experimentOutputs;
+    async run(experiment, experimentOutput) {
+        console.log(`Calculating Dieff for ${experiment}`);
+        return await this.calculateDiEfficiencyExperiment(experimentOutput);
     }
     async calculateDiEfficiencyExperiment(experimentData) {
         const relevantDocuments = experimentData.templateToRelevantDocuments;
@@ -56,12 +50,16 @@ class DiefficiencyMetricExperiment {
         const resultTimestamps = experimentData.templateToTimings;
         const templateToDiefficiency = {};
         for (const template of Object.keys(relevantDocuments)) {
+            console.log(template);
             const templateMetrics = await this.calculateDiEfficiencyTemplate(topologies[template], relevantDocuments[template], resultTimestamps[template]);
             templateToDiefficiency[template] = templateMetrics;
         }
         return templateToDiefficiency;
     }
     async calculateDiEfficiencyTemplate(topologies, relevantDocuments, resultTimestamps) {
+        console.log("Topologies, relevant documents sizes");
+        console.log(topologies.map(x => x.length));
+        console.log(relevantDocuments.map(x => x.length));
         const templateRetrievalDieff = [];
         const templateResultDieff = [];
         const templateExecutionTimes = [];
@@ -70,17 +68,19 @@ class DiefficiencyMetricExperiment {
             const queryRetrievalTimestamps = [];
             for (let j = 0; j < relevantDocuments[i].length; j++) {
                 if (topologies[i][j] === undefined) {
-                    console.log(topologies.length);
-                    console.log(topologies[i].length);
-                    console.log(relevantDocuments.length);
-                    console.log(relevantDocuments[i].length);
+                    console.log("Undefined topology");
+                    console.log(i, j);
                 }
                 const relevantDocumentsAsIndex = relevantDocuments[i][j].map(x => {
                     return x.map(y => {
                         const indexedNode = topologies[i][j].nodeToIndex[y];
                         if (indexedNode === undefined) {
-                            console.log(topologies[i][j].nodeToIndex);
-                            console.log(`Node: ${y} not in node to index for i,j,y${[i, j, y]}`);
+                            console.log(`Node: ${y} not in node to index for i,j: ${[i, j]}`);
+                            // console.log(JSON.stringify(relevantDocuments, undefined, 2))
+                            // console.log(topologies[i][j].nodeToIndex)
+                            // const targetNumber = "00000015393162790168";
+                            // const regex = new RegExp(targetNumber);
+                            // const matches = topologies.filter(str => regex.test(str));
                         }
                         return indexedNode;
                     });
@@ -193,8 +193,8 @@ class DiefficiencyMetricExperiment {
         let i = 0;
         while (firstDiscoverTimestamp === 0) {
             const metadata = topology.nodeMetadata[i];
-            if (metadata.discoverTimestamp) {
-                firstDiscoverTimestamp = metadata.discoverTimestamp;
+            if (metadata.linkMetadata) {
+                firstDiscoverTimestamp = metadata.linkMetadata[0].discoveredTimestamp;
             }
             i++;
         }

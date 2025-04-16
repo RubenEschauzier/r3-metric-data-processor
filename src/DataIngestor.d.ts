@@ -4,7 +4,7 @@ export declare class DataIngestor {
     intermediateResultFilePattern: RegExp;
     topologyFilePattern: RegExp;
     constructor(dataLocation: string);
-    read(): Record<string, IExperimentReadOutput>;
+    read(): Generator<IDataIngested>;
     /**
      * Read result time stamps and total elapsed time per query to construct diefficiency with
      */
@@ -27,7 +27,7 @@ export declare class DataIngestor {
      */
     getSeedDocuments(topology: Record<string, any>): number[];
     constructEdgeList(topology: any, weightType: 'unweighted' | 'http' | 'documentSize'): number[][];
-    constructEdgesInOrder(topology: any, weightType: 'unweighted' | 'http' | 'documentSize'): any;
+    constructEdgesInOrder(topology: any, weightType: 'unweighted' | 'http' | 'documentSize'): any[][];
     readFullExperiment(experimentLocation: string): IExperimentReadOutput;
     processExperimentQueryTimes(queryTimes: ParseResult<any>): Record<string, IResultTimingsTemplate>;
 }
@@ -70,4 +70,8 @@ export interface IResultTimingsTemplate {
     timestamps: number[][];
     timeElapsed: number[][];
     timeOut: boolean[];
+}
+export interface IDataIngested {
+    experiment: string;
+    experimentOutput: IExperimentReadOutput;
 }

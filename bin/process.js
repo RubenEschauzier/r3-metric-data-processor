@@ -37,19 +37,25 @@ const path = __importStar(require("path"));
 const DataIngestor_1 = require("../src/DataIngestor");
 const R3Metric_1 = require("../src/R3Metric");
 const DiefficiencyMetric_1 = require("../src/DiefficiencyMetric");
-const fs = __importStar(require("fs"));
 const ingestor = new DataIngestor_1.DataIngestor(path.join(__dirname, "..", "data", "output"));
 const processedData = ingestor.read();
 const r3MetricOutputDir = path.join(__dirname, "..", "data", "calculated-metrics", "r3-metrics");
 const dieffMetricOutputDir = path.join(__dirname, "..", "data", "calculated-metrics", "dieff-metrics");
 const oracelOutputDir = path.join(__dirname, "..", "data", "processed-data");
-const r3Metric = new R3Metric_1.R3Metric(processedData);
-const diMetric = new DiefficiencyMetric_1.DiefficiencyMetricExperiment(processedData);
-diMetric.run().then(x => {
-    DiefficiencyMetric_1.DiefficiencyMetricExperiment.writeToFile(x, dieffMetricOutputDir);
-    r3Metric.run().then(x => {
-        R3Metric_1.R3Metric.writeToFile(x, r3MetricOutputDir);
-    });
-});
-fs.writeFileSync(path.join(oracelOutputDir, 'oracleData.json'), JSON.stringify(processedData['combination_0'].oracleRccValues));
+const r3Metric = new R3Metric_1.R3Metric();
+const diMetric = new DiefficiencyMetric_1.DiefficiencyMetricExperiment();
+async function calculateMetrics(data) {
+    const r3MetricOutput = {};
+    const dieffOutput = {};
+    for (let { experiment, experimentOutput } of data) {
+        const r3Result = await r3Metric.run(experiment, experimentOutput);
+        const dieffResult = await diMetric.run(experiment, experimentOutput);
+        r3MetricOutput[experiment] = r3Result;
+        dieffOutput[experiment] = dieffResult;
+        // experimentOutput = undefined as unknown as IExperimentReadOutput;    
+    }
+    // DiefficiencyMetricExperiment.writeToFile(dieffOutput, dieffMetricOutputDir);
+    // R3Metric.writeToFile(r3MetricOutput, r3MetricOutputDir);
+}
+calculateMetrics(processedData);
 //# sourceMappingURL=process.js.map

@@ -1,10 +1,9 @@
 import * as r3 from 'relevant-retrieval-ratio';
 import { IExperimentReadOutput, ITopologyOutput } from './DataIngestor';
 export declare class R3Metric {
-    benchmarkData: Record<string, IExperimentReadOutput>;
     metricCalculator: r3.RunLinkTraversalPerformanceMetrics;
-    constructor(data: Record<string, IExperimentReadOutput>);
-    run(): Promise<Record<string, Record<string, ITemplateR3Metric>>>;
+    constructor();
+    run(experiment: string, experimentOutput: IExperimentReadOutput): Promise<Record<string, ITemplateR3Metric>>;
     calculateMetricExperiment(experimentData: IExperimentReadOutput): Promise<Record<string, ITemplateR3Metric>>;
     calculateMetricTemplate(topologies: ITopologyOutput[][], relevantDocuments: string[][][][]): Promise<ITemplateR3Metric>;
     static writeToFile(data: Record<string, Record<string, ITemplateR3Metric>>, outputLocation: string): void;

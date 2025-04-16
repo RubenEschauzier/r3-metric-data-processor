@@ -4,21 +4,13 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 export class DiefficiencyMetricExperiment{
-    public benchmarkData: Record<string, IExperimentReadOutput>;
 
-    public constructor(data: Record<string, IExperimentReadOutput>){
-        this.benchmarkData = data;
-
+    public constructor(){
     }
-    public async run(): Promise<Record<string, Record<string, ITemplateDieff>>> {
-        const experimentOutputs: Record<string, Record<string, ITemplateDieff>> = {};
-        for (const experiment of Object.keys(this.benchmarkData)){
-            console.log(`Calculating Dieff for ${experiment}`);
-            const templateMetrics = 
-                await this.calculateDiEfficiencyExperiment(this.benchmarkData[experiment]);
-            experimentOutputs[experiment] = templateMetrics;
-        }
-        return experimentOutputs;
+
+    public async run(experiment: string, experimentOutput: IExperimentReadOutput): Promise<Record<string, ITemplateDieff>> {
+        console.log(`Calculating Dieff for ${experiment}`);
+        return await this.calculateDiEfficiencyExperiment(experimentOutput);
     }
 
     public async calculateDiEfficiencyExperiment(experimentData: IExperimentReadOutput){
@@ -27,6 +19,7 @@ export class DiefficiencyMetricExperiment{
         const resultTimestamps = experimentData.templateToTimings;
         const templateToDiefficiency: Record<string, ITemplateDieff> = {};
         for (const template of Object.keys(relevantDocuments)){
+            console.log(template)
             const templateMetrics = await this.calculateDiEfficiencyTemplate(
                 topologies[template], relevantDocuments[template], resultTimestamps[template]
             );
@@ -40,6 +33,9 @@ export class DiefficiencyMetricExperiment{
         relevantDocuments: string[][][][],
         resultTimestamps: IResultTimingsTemplate
     ): Promise<ITemplateDieff> {
+        console.log("Topologies, relevant documents sizes")
+        console.log(topologies.map(x=>x.length));
+        console.log(relevantDocuments.map(x=>x.length));
         const templateRetrievalDieff: IDieffOutput[] = []
         const templateResultDieff: IDieffOutput[] = [];
         const templateExecutionTimes: number[] = [];
@@ -48,17 +44,20 @@ export class DiefficiencyMetricExperiment{
             const queryRetrievalTimestamps: number[][] = [];
             for (let j = 0; j < relevantDocuments[i].length; j++){
                 if (topologies[i][j] === undefined){
-                    console.log(topologies.length)
-                    console.log(topologies[i].length)
-                    console.log(relevantDocuments.length)
-                    console.log(relevantDocuments[i].length)
+                    console.log("Undefined topology")
+                    console.log(i,j);
                 }
                 const relevantDocumentsAsIndex = relevantDocuments[i][j].map(x => {
                     return x.map(y => {
                         const indexedNode = topologies[i][j].nodeToIndex[y]
                         if (indexedNode === undefined){
-                            console.log(topologies[i][j].nodeToIndex)
-                            console.log(`Node: ${y} not in node to index for i,j,y${[i,j,y]}`);
+                            console.log(`Node: ${y} not in node to index for i,j: ${[i,j]}`);
+                            // console.log(JSON.stringify(relevantDocuments, undefined, 2))
+                            // console.log(topologies[i][j].nodeToIndex)
+                            // const targetNumber = "00000015393162790168";
+                            // const regex = new RegExp(targetNumber);
+                            
+                            // const matches = topologies.filter(str => regex.test(str));
                         }
                         return indexedNode
                     });
@@ -185,8 +184,8 @@ export class DiefficiencyMetricExperiment{
         let i = 0;
         while (firstDiscoverTimestamp === 0){
             const metadata = topology.nodeMetadata[i];
-            if (metadata.discoverTimestamp){
-                firstDiscoverTimestamp = metadata.discoverTimestamp;
+            if (metadata.linkMetadata){
+                firstDiscoverTimestamp = metadata.linkMetadata[0].discoveredTimestamp;
             }
             i++;
         }

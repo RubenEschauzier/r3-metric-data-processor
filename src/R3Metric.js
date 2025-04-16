@@ -38,18 +38,13 @@ const r3 = __importStar(require("relevant-retrieval-ratio"));
 const fs = __importStar(require("fs"));
 const path = __importStar(require("path"));
 class R3Metric {
-    constructor(data) {
-        this.benchmarkData = data;
+    constructor() {
         this.metricCalculator = new r3.RunLinkTraversalPerformanceMetrics();
     }
-    async run() {
-        const experimentOutputs = {};
-        for (const experiment of Object.keys(this.benchmarkData)) {
-            console.log(`Calculating R3 for ${experiment}`);
-            const templateMetrics = await this.calculateMetricExperiment(this.benchmarkData[experiment]);
-            experimentOutputs[experiment] = templateMetrics;
-        }
-        return experimentOutputs;
+    async run(experiment, experimentOutput) {
+        console.log(`Calculating R3 for ${experiment}`);
+        return await this.calculateMetricExperiment(experimentOutput);
+        ;
     }
     async calculateMetricExperiment(experimentData) {
         const relevantDocuments = experimentData.templateToRelevantDocuments;
@@ -77,7 +72,7 @@ class R3Metric {
                     console.log(relevantDocuments[i].length);
                 }
                 const numNodes = Object.keys(topologies[i][j].indexToNode).length;
-                const relevanDocumentsAsIndex = relevantDocuments[i][j].map(x => {
+                const relevantDocumentsAsIndex = relevantDocuments[i][j].map(x => {
                     return x.map(y => {
                         const indexedNode = topologies[i][j].nodeToIndex[y];
                         if (indexedNode === undefined) {
@@ -88,7 +83,7 @@ class R3Metric {
                     });
                 });
                 // In case there are no relevant documents, the query timed out so R3 can't be computed
-                if (relevanDocumentsAsIndex.length === 0) {
+                if (relevantDocumentsAsIndex.length === 0) {
                     queryMetricsUnweighted.push(-1);
                     queryMetricsHttp.push(-1);
                 }
@@ -97,8 +92,8 @@ class R3Metric {
                     queryMetricsHttp.push(1);
                 }
                 else {
-                    const outputUnweighted = await this.metricCalculator.runMetricAll(topologies[i][j].edgeList, relevanDocumentsAsIndex, topologies[i][j].dereferenceOrder, topologies[i][j].seedDocuments, numNodes);
-                    const outputHttp = await this.metricCalculator.runMetricAll(topologies[i][j].edgeListHttp, relevanDocumentsAsIndex, topologies[i][j].dereferenceOrderHttp, topologies[i][j].seedDocuments, numNodes);
+                    const outputUnweighted = await this.metricCalculator.runMetricAll(topologies[i][j].edgeList, relevantDocumentsAsIndex, topologies[i][j].dereferenceOrder, topologies[i][j].seedDocuments, numNodes);
+                    const outputHttp = await this.metricCalculator.runMetricAll(topologies[i][j].edgeListHttp, relevantDocumentsAsIndex, topologies[i][j].dereferenceOrderHttp, topologies[i][j].seedDocuments, numNodes);
                     queryMetricsUnweighted.push(outputUnweighted);
                     queryMetricsHttp.push(outputHttp);
                 }

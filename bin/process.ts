@@ -1,7 +1,7 @@
 import * as path from 'path';
-import { DataIngestor } from '../src/DataIngestor';
-import { R3Metric } from '../src/R3Metric';
-import { DiefficiencyMetricExperiment } from '../src/DiefficiencyMetric';
+import { DataIngestor, IDataIngested, IExperimentReadOutput } from '../src/DataIngestor';
+import { ITemplateR3Metric, R3Metric } from '../src/R3Metric';
+import { DiefficiencyMetricExperiment, ITemplateDieff } from '../src/DiefficiencyMetric';
 import * as fs from 'fs';
 
 const ingestor = new DataIngestor(path.join(__dirname, "..", "data", "output"));
@@ -11,18 +11,22 @@ const r3MetricOutputDir = path.join(__dirname, "..", "data", "calculated-metrics
 const dieffMetricOutputDir = path.join(__dirname, "..", "data", "calculated-metrics", "dieff-metrics");
 const oracelOutputDir = path.join(__dirname, "..", "data", "processed-data");
 
-const r3Metric = new R3Metric(processedData);
-const diMetric = new DiefficiencyMetricExperiment(processedData);
-diMetric.run().then(x => {
-    DiefficiencyMetricExperiment.writeToFile(x, dieffMetricOutputDir)
-    r3Metric.run().then(x => {
-        R3Metric.writeToFile(x, r3MetricOutputDir);
-    });    
-});
+const r3Metric = new R3Metric();
+const diMetric = new DiefficiencyMetricExperiment();
 
+async function calculateMetrics(data: Generator<IDataIngested>){
+    const r3MetricOutput: Record<string, Record<string, ITemplateR3Metric>> = {};
+    const dieffOutput: Record<string, Record<string, ITemplateDieff>> = {};
+    for (let {experiment, experimentOutput} of data){
+        const r3Result = await r3Metric.run(experiment, experimentOutput);
+        const dieffResult = await diMetric.run(experiment, experimentOutput);
+        r3MetricOutput[experiment] = r3Result;
+        dieffOutput[experiment] = dieffResult;
+        // experimentOutput = undefined as unknown as IExperimentReadOutput;    
+        
+    }
+    // DiefficiencyMetricExperiment.writeToFile(dieffOutput, dieffMetricOutputDir);
+    // R3Metric.writeToFile(r3MetricOutput, r3MetricOutputDir);
 
-fs.writeFileSync(
-    path.join(oracelOutputDir, 'oracleData.json'), 
-    JSON.stringify(processedData['combination_0'].oracleRccValues)
-);
-
+}
+calculateMetrics(processedData);

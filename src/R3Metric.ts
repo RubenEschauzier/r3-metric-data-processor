@@ -4,23 +4,15 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 export class R3Metric{
-    public benchmarkData: Record<string, IExperimentReadOutput>;
     public metricCalculator: r3.RunLinkTraversalPerformanceMetrics;
 
-    public constructor(data: Record<string, IExperimentReadOutput>){
-        this.benchmarkData = data;
+    public constructor(){
         this.metricCalculator = new r3.RunLinkTraversalPerformanceMetrics();
     }
 
-    public async run(){
-        const experimentOutputs: Record<string, Record<string, ITemplateR3Metric>> = {};
-        for (const experiment of Object.keys(this.benchmarkData)){
-            console.log(`Calculating R3 for ${experiment}`);
-            const templateMetrics = 
-                await this.calculateMetricExperiment(this.benchmarkData[experiment]);
-            experimentOutputs[experiment] = templateMetrics;
-        }
-        return experimentOutputs;
+    public async run(experiment: string, experimentOutput: IExperimentReadOutput){
+        console.log(`Calculating R3 for ${experiment}`);
+        return await this.calculateMetricExperiment(experimentOutput);;
     }
 
     public async calculateMetricExperiment(experimentData: IExperimentReadOutput){
@@ -31,7 +23,7 @@ export class R3Metric{
             const templateMetrics = await this.calculateMetricTemplate(
                 topologies[template], relevantDocuments[template]
             );
-            templateToR3[template] = templateMetrics;
+            templateToR3[template] = templateMetrics;    
         }
         return templateToR3
     }
@@ -54,7 +46,7 @@ export class R3Metric{
                     console.log(relevantDocuments[i].length)
                 }
                 const numNodes = Object.keys(topologies[i][j].indexToNode).length;
-                const relevanDocumentsAsIndex = relevantDocuments[i][j].map(x => {
+                const relevantDocumentsAsIndex = relevantDocuments[i][j].map(x => {
                     return x.map(y => {
                         const indexedNode = topologies[i][j].nodeToIndex[y]
                         if (indexedNode === undefined){
@@ -65,7 +57,7 @@ export class R3Metric{
                     });
                 });
                 // In case there are no relevant documents, the query timed out so R3 can't be computed
-                if (relevanDocumentsAsIndex.length === 0){
+                if (relevantDocumentsAsIndex.length === 0){
                     queryMetricsUnweighted.push(-1);
                     queryMetricsHttp.push(-1);
                 }
@@ -76,14 +68,14 @@ export class R3Metric{
                 else{
                     const outputUnweighted = await this.metricCalculator.runMetricAll(
                         topologies[i][j].edgeList,
-                        relevanDocumentsAsIndex,
+                        relevantDocumentsAsIndex,
                         topologies[i][j].dereferenceOrder,
                         topologies[i][j].seedDocuments,
                         numNodes
                     );
                     const outputHttp = await this.metricCalculator.runMetricAll(
                         topologies[i][j].edgeListHttp,
-                        relevanDocumentsAsIndex,
+                        relevantDocumentsAsIndex,
                         topologies[i][j].dereferenceOrderHttp,
                         topologies[i][j].seedDocuments,
                         numNodes
