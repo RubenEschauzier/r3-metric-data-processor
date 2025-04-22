@@ -25,8 +25,8 @@ async function calculateMetrics(data: Generator<IDataIngested>){
         // experimentOutput = undefined as unknown as IExperimentReadOutput;    
         
     }
-    // DiefficiencyMetricExperiment.writeToFile(dieffOutput, dieffMetricOutputDir);
-    // R3Metric.writeToFile(r3MetricOutput, r3MetricOutputDir);
+    DiefficiencyMetricExperiment.writeToFile(dieffOutput, dieffMetricOutputDir);
+    R3Metric.writeToFile(r3MetricOutput, r3MetricOutputDir);
 
 }
 calculateMetrics(processedData);

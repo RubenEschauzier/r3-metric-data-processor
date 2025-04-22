@@ -54,8 +54,8 @@ async function calculateMetrics(data) {
         dieffOutput[experiment] = dieffResult;
         // experimentOutput = undefined as unknown as IExperimentReadOutput;    
     }
-    // DiefficiencyMetricExperiment.writeToFile(dieffOutput, dieffMetricOutputDir);
-    // R3Metric.writeToFile(r3MetricOutput, r3MetricOutputDir);
+    DiefficiencyMetric_1.DiefficiencyMetricExperiment.writeToFile(dieffOutput, dieffMetricOutputDir);
+    R3Metric_1.R3Metric.writeToFile(r3MetricOutput, r3MetricOutputDir);
 }
 calculateMetrics(processedData);
 //# sourceMappingURL=process.js.map

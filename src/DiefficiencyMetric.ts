@@ -19,7 +19,6 @@ export class DiefficiencyMetricExperiment{
         const resultTimestamps = experimentData.templateToTimings;
         const templateToDiefficiency: Record<string, ITemplateDieff> = {};
         for (const template of Object.keys(relevantDocuments)){
-            console.log(template)
             const templateMetrics = await this.calculateDiEfficiencyTemplate(
                 topologies[template], relevantDocuments[template], resultTimestamps[template]
             );
@@ -33,9 +32,6 @@ export class DiefficiencyMetricExperiment{
         relevantDocuments: string[][][][],
         resultTimestamps: IResultTimingsTemplate
     ): Promise<ITemplateDieff> {
-        console.log("Topologies, relevant documents sizes")
-        console.log(topologies.map(x=>x.length));
-        console.log(relevantDocuments.map(x=>x.length));
         const templateRetrievalDieff: IDieffOutput[] = []
         const templateResultDieff: IDieffOutput[] = [];
         const templateExecutionTimes: number[] = [];

@@ -27,7 +27,7 @@ export declare class DataIngestor {
      */
     getSeedDocuments(topology: Record<string, any>): number[];
     constructEdgeList(topology: any, weightType: 'unweighted' | 'http' | 'documentSize'): number[][];
-    constructEdgesInOrder(topology: any, weightType: 'unweighted' | 'http' | 'documentSize'): any[][];
+    constructEdgesInOrder(topology: any, weightType: 'unweighted' | 'http' | 'documentSize'): number[][];
     readFullExperiment(experimentLocation: string): IExperimentReadOutput;
     processExperimentQueryTimes(queryTimes: ParseResult<any>): Record<string, IResultTimingsTemplate>;
 }

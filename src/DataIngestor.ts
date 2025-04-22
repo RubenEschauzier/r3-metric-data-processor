@@ -173,7 +173,9 @@ export class DataIngestor{
     }
 
     public constructEdgesInOrder(topology: any, weightType: 'unweighted' | 'http' | 'documentSize'){
-        const weightedEdgesInOrder = [];
+        // We start with edge from virtual root node to the seed document(s), as the R3 metric expects
+        // There to be a single root node
+        const weightedEdgesInOrder = [[1,0,1]];
         for (const dereferencedNode of topology.dereferenceOrder){
             for (const edge of topology.edgesInOrder){
                 if (edge[1] === dereferencedNode){

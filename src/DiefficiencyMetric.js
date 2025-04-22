@@ -50,16 +50,12 @@ class DiefficiencyMetricExperiment {
         const resultTimestamps = experimentData.templateToTimings;
         const templateToDiefficiency = {};
         for (const template of Object.keys(relevantDocuments)) {
-            console.log(template);
             const templateMetrics = await this.calculateDiEfficiencyTemplate(topologies[template], relevantDocuments[template], resultTimestamps[template]);
             templateToDiefficiency[template] = templateMetrics;
         }
         return templateToDiefficiency;
     }
     async calculateDiEfficiencyTemplate(topologies, relevantDocuments, resultTimestamps) {
-        console.log("Topologies, relevant documents sizes");
-        console.log(topologies.map(x => x.length));
-        console.log(relevantDocuments.map(x => x.length));
         const templateRetrievalDieff = [];
         const templateResultDieff = [];
         const templateExecutionTimes = [];
