@@ -1,4 +1,4 @@
-Data is expected to be in the same format as output by the JBR (INSERT LINK HERE) experiment used to produce the results. This is as follows:
+Data is expected to be in the same format as output by the [JBR experiment](https://github.com/RubenEschauzier/link-prioritization-experiments) used to produce the results. This is as follows:
 
 - `output`
   - `combination_0`
@@ -10,3 +10,4 @@ Data is expected to be in the same format as output by the JBR (INSERT LINK HERE
     - `interactive-short-6`
   - `combination_1`
     ...
+  
