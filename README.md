@@ -1,6 +1,8 @@
 ## Data Processor to Calculate $R^3$ Metric from Comunica Output
 
-This repository provides the code and links to other repositories used to produce the results presented in the paper titled:
+This repository provides the code and links to other repositories used to produce the results presented in the paper titled: 
+
+**Revisiting Link Prioritization for Efficient Traversal in Structured Decentralized Environments**
 
 ### Reproducing the Experiments of the Paper
 
