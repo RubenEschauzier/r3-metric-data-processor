@@ -48,6 +48,13 @@ If you want to calculate the $R^3$ and $DiefD$ metrics for any other configurati
 ```
 Note that the `query-source-identify` configurations should replace the default `query-source-identify` configurations in Comunica. By adding this alternate version, bindings produced by Comunica are annotated with their source. Next, the `merge-bindings-context` configurations allow these source annotations to propagate through the joins. Finally, the `iterator-transform` and `query-operation` configurations allow Comunica to wrap intermediate solution-producing streams, thus enabling us to record information about data flowing through Comunica. The actor added via `@graph` creates file writers to record information generated during query execution. Note that the `baseDirectoryExperiment` specifies the directory where the files will be written.
 
+Furthermore, the set-r3-metric-tracking actor optionally accepts a `"fileLocationBase64toOutputDir"` parameter. This should point to a file which maps the base64 representations of queries to their output directory, for example:
+```
+"fileLocationBase64toOutputDir": "file:///tmp/r3-metric-output/base64ToDirectory.json"
+```
+This allows a benchmark to automatically write data to the directories in the `baseDirectoryExperiment` directory that correspond to the queries in the benchmark. Without this option set, all query runs will have their data written to the same directory.
+
+
 ### Processing the Output Data To Calculate the $R^{3}$, $Dief$, and $DiefD$ Metrics
 
 The experiment to calculate the $R^{3}$, $Dief$, and $DiefD$ metrics for the paper produces output in the following format: 
