@@ -48,10 +48,12 @@ async function calculateMetrics(data) {
     const r3MetricOutput = {};
     const dieffOutput = {};
     for (let { experiment, experimentOutput } of data) {
-        const r3Result = await r3Metric.run(experiment, experimentOutput);
-        const dieffResult = await diMetric.run(experiment, experimentOutput);
-        r3MetricOutput[experiment] = r3Result;
-        dieffOutput[experiment] = dieffResult;
+        if (experiment === "combination_15") {
+            const r3Result = await r3Metric.run(experiment, experimentOutput);
+            const dieffResult = await diMetric.run(experiment, experimentOutput);
+            r3MetricOutput[experiment] = r3Result;
+            dieffOutput[experiment] = dieffResult;
+        }
         // experimentOutput = undefined as unknown as IExperimentReadOutput;    
     }
     DiefficiencyMetric_1.DiefficiencyMetricExperiment.writeToFile(dieffOutput, dieffMetricOutputDir);

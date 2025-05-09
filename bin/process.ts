@@ -21,9 +21,7 @@ async function calculateMetrics(data: Generator<IDataIngested>){
         const r3Result = await r3Metric.run(experiment, experimentOutput);
         const dieffResult = await diMetric.run(experiment, experimentOutput);
         r3MetricOutput[experiment] = r3Result;
-        dieffOutput[experiment] = dieffResult;
-        // experimentOutput = undefined as unknown as IExperimentReadOutput;    
-        
+        dieffOutput[experiment] = dieffResult;            
     }
     DiefficiencyMetricExperiment.writeToFile(dieffOutput, dieffMetricOutputDir);
     R3Metric.writeToFile(r3MetricOutput, r3MetricOutputDir);
