@@ -6,7 +6,9 @@
   "license": "MIT",
   "scripts": {
     "build-watch:ts": "tsc --watch",
-    "clean": "tsc clean"
+    "clean": "tsc clean; rm -f node_modules",
+    "build": "tsc",
+    "postinstall": "yarn run build"
   },
   "dependencies": {
     "relevant-retrieval-ratio": "^1.0.2",
