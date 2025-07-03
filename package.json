@@ -5,7 +5,8 @@
   "main": "bin/index.js",
   "license": "MIT",
   "scripts": {
-    "build-watch:ts": "tsc --watch"
+    "build-watch:ts": "tsc --watch",
+    "clean": "tsc clean"
   },
   "dependencies": {
     "relevant-retrieval-ratio": "^1.0.2",
@@ -17,5 +18,6 @@
   "devDependencies": {
     "@types/node": "^22.10.1",
     "@types/papaparse": "^5.3.15"
-  }
+  },
+  "packageManager": "yarn@1.22.22+sha1.ac34549e6aa8e7ead463a7407e1c7390f61a6610"
 }

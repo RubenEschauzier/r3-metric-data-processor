@@ -4,3 +4,6 @@ data/*
 !data/README.md
 !data/processed-data/.keep
 node_modules/
+**/*.js
+**/*.js.map
+**/*.d.ts
